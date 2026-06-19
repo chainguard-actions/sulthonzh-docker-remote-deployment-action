@@ -10,6 +10,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 |---------|-----|-----------------|
 | v1.4.2 | [`v1.4.2`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.2) | [`6341484`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/634148425bd35ebb937ef845b6b0cd182f134c16) |
 | v1.4.7 | [`v1.4.7`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.7) | [`c509ce5`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/c509ce5dd9a91f9106d7e13aae156124c4cae792) |
+| v1.4.8 | [`v1.4.8`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.8) | [`0004a3d`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/0004a3d9ec45b82a5924ed2b9e80b9ad00c14ee3) |
 
 ## Privacy
 
