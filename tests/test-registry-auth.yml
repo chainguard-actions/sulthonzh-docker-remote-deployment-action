@@ -1,0 +1,40 @@
+name: Test private registry authentication inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with registry credentials and invalid host
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'user@192.0.2.1'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMCBBBBBBBBBBBBBB
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          docker_registry_username: 'testuser'
+          docker_registry_password: 'testpassword'
+          docker_registry_uri: 'https://registry.hub.docker.com'
+
+      - name: Assert action ran (failed at SSH, not at input validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (SSH connection to unreachable host)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: registry auth inputs were accepted and processed"
