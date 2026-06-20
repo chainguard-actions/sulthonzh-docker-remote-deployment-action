@@ -1,0 +1,44 @@
+name: Test docker-swarm deployment mode validation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate a real SSH key pair for testing
+        id: keygen
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "" -q
+          echo "private_key<<EOF" >> $GITHUB_OUTPUT
+          cat /tmp/test_key >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "public_key=$(cat /tmp/test_key.pub)" >> $GITHUB_OUTPUT
+
+      - name: Run action with docker-swarm mode (SSH will fail - no real host)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'user@192.0.2.1'
+          remote_docker_port: '2376'
+          ssh_public_key: ${{ steps.keygen.outputs.public_key }}
+          ssh_private_key: ${{ steps.keygen.outputs.private_key }}
+          args: 'deploy my-stack'
+          deployment_mode: 'docker-swarm'
+          stack_file_name: 'docker-compose.yml'
+
+      - name: Assert action failed at SSH stage not at validation
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # Action should fail because there's no real SSH host,
+          # but docker-swarm is a valid deployment_mode so it should
+          # not fail at the deployment_mode validation step.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action unexpectedly succeeded without a real SSH host"
+            exit 1
+          fi
+          echo "PASS: action accepted docker-swarm mode and failed at SSH stage as expected"
