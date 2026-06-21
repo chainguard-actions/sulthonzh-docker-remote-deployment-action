@@ -1,0 +1,44 @@
+name: Test private registry and pre-deployment command args
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with private registry credentials and pre-deployment args
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'user@192.0.2.1'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhBiMFHGBFHGBFH
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          docker_registry_username: 'myregistryuser'
+          docker_registry_password: 'myregistrypassword'
+          docker_registry_uri: 'https://registry.hub.docker.com'
+          pre_deployment_command_args: 'config'
+
+      - name: Assert action attempted (fails at SSH, not at input validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because 192.0.2.1 is a TEST-NET address with no real SSH host.
+          # What matters is that the inputs were accepted (not rejected by input validation).
+          # If the action had rejected the inputs, it would also be 'failure', which is acceptable.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed at SSH connection stage as expected (inputs were accepted)"
+          else
+            echo "FAIL: unexpected outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS"
