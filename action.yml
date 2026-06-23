@@ -1,0 +1,70 @@
+name: Docker Remote Deployment
+description: Secure GitHub Action for Docker Compose and Docker Swarm deployments via SSH. Includes input validation, automatic cleanup, and private registry support.
+inputs:
+  remote_docker_host:
+    description: 'Remote Docker host (format: user@host). Supports SSH connections.'
+    required: true
+  remote_docker_port:
+    description: 'SSH port for remote host. Must be a valid port number (1-65535). Default: 22'
+    required: false
+    default: '22'
+    deprecationMessage: 'This input is deprecated. The action now automatically validates port ranges.'
+  ssh_public_key:
+    description: 'SSH public key content. Must match the private key.'
+    required: true
+  ssh_private_key:
+    description: 'SSH private key content for authentication with remote host.'
+    required: true
+  args:
+    description: 'Deployment command arguments. Examples: "up -d" for compose, "deploy my-stack" for swarm. Input is validated to prevent command injection.'
+    required: true
+  deployment_mode:
+    description: 'Deployment mode. docker-compose for Compose files, docker-swarm for Swarm mode.'
+    required: false
+    default: 'docker-compose'
+  copy_stack_file:
+    description: 'Copy stack file to remote server before deployment. Enables version rotation.'
+    required: false
+    default: 'false'
+  deploy_path:
+    description: 'Remote path for stack file storage. Created automatically if it doesnt exist.'
+    required: false
+    default: '~/docker-deployment'
+  stack_file_name:
+    description: 'Name of the docker-compose stack file. Supports any valid filename.'
+    required: false
+    default: 'docker-compose.yml'
+  keep_files:
+    description: 'Total number of stack file versions to keep, including the currently deployed file (when copy_stack_file=true). Example: keep_files=4 retains the current version plus up to 3 previous versions. Must be a positive integer. Default: 4'
+    required: false
+    default: '4'
+  docker_prune:
+    description: 'Run docker system prune after deployment. Removes unused images, containers, networks, and volumes. WARNING: Does NOT remove volumes by default. Use with caution.'
+    required: false
+    default: 'false'
+  pre_deployment_command_args:
+    description: 'Pre-deployment command arguments (docker-compose mode only). Example: "config" to validate.'
+    required: false
+  pull_images_first:
+    description: 'Pull images before deployment (docker-compose mode only). Ensures latest images are used.'
+    required: false
+    default: 'false'
+  docker_registry_username:
+    description: 'Private Docker registry username. Required for private registry authentication.'
+    required: false
+  docker_registry_password:
+    description: 'Private Docker registry password. Use secrets for security.'
+    required: false
+  docker_registry_uri:
+    description: 'Private Docker registry URI. Default is Docker Hub.'
+    required: false
+    default: 'https://registry.hub.docker.com'
+
+runs:
+  using: docker
+  image: Dockerfile
+
+branding:
+  icon: send
+  color: green
+
