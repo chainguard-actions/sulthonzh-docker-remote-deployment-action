@@ -72,10 +72,10 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Get tag name and sanitize (strip newlines)
-          RAW_TAG="${GITHUB_REF#refs/tags/}"
-          TAG=$(printf '%s' "$RAW_TAG" | tr -d '\n\r')
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Get tag name and sanitize (strip newlines to prevent GITHUB_OUTPUT injection)
+          TAG=${GITHUB_REF#refs/tags/}
+          safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')
+          echo "tag=$safe_tag" >> "$GITHUB_OUTPUT"
 
           # Get commit messages since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -84,12 +84,12 @@ jobs:
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" -10)
           fi
-
-          # Write changelog using heredoc delimiter, sanitizing newlines in the delimiter line
-          # The changelog body itself may contain newlines (intentional for multi-line output)
-          # but we sanitize the EOF marker to prevent injection via crafted commit messages
-          SAFE_CHANGELOG=$(printf '%s' "$CHANGELOG" | tr -d '\r')
-          printf 'changelog<<EOF\n%s\nEOF\n' "$SAFE_CHANGELOG" >> "$GITHUB_OUTPUT"
+          # Sanitize CHANGELOG: strip carriage returns and replace any line that
+          # equals the heredoc delimiter to prevent heredoc-injection attacks.
+          safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r' | sed 's/^EOF$/[EOF]/')
+          echo "changelog<<CHANGELOG_DELIM" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$safe_changelog" >> "$GITHUB_OUTPUT"
+          echo "CHANGELOG_DELIM" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
