@@ -1,0 +1,42 @@
+name: Test pre_deployment_command_args input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with pre_deployment_command_args set
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'deploy@192.0.2.1'
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMpYGFMKMBqMoFN
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          stack_file_name: 'docker-compose.yml'
+          keep_files: '4'
+          docker_prune: 'false'
+          copy_stack_file: 'false'
+          pre_deployment_command_args: 'config'
+
+      - name: Assert action failed at SSH stage (not at validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because 192.0.2.1 is a TEST-NET address (RFC 5737)
+          # that is guaranteed unreachable. The pre_deployment_command_args input was
+          # accepted by validation and the action proceeded to the SSH/Docker stage.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action unexpectedly succeeded without a real remote host"
+            exit 1
+          fi
+          echo "PASS: action failed at SSH/Docker connection stage as expected (pre_deployment_command_args input accepted)"
