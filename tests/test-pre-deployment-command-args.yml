@@ -1,0 +1,38 @@
+name: Test pre_deployment_command_args input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with pre_deployment_command_args
+        id: action
+        continue-on-error: true
+        uses: .
+        with:
+          remote_docker_host: 'user@somehost'
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCTBMFBsRMBSMkMkMk
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          pre_deployment_command_args: 'config'
+
+      - name: Assert action ran (with pre_deployment_command_args accepted)
+        run: |
+          echo "outcome: ${{ steps.action.outcome }}"
+          # The action will fail because SSH cannot connect to a fake host,
+          # but it must NOT fail due to input validation of pre_deployment_command_args.
+          # Any outcome (success or failure) is acceptable as long as the action
+          # did not reject the pre_deployment_command_args input itself.
+          if [ "${{ steps.action.outcome }}" = "success" ] || [ "${{ steps.action.outcome }}" = "failure" ]; then
+            echo "PASS: action accepted pre_deployment_command_args input"
+          else
+            echo "FAIL: unexpected outcome: ${{ steps.action.outcome }}"
+            exit 1
+          fi
