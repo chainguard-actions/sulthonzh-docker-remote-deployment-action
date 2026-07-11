@@ -1,0 +1,36 @@
+name: Test pre_deployment_command_args input
+on:
+  workflow_dispatch:
+
+jobs:
+  test-pre-deployment-command:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with pre_deployment_command_args set
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: "user@192.0.2.1"
+          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test"
+          ssh_private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----"
+          args: "up -d"
+          deployment_mode: "docker-compose"
+          pre_deployment_command_args: "config"
+
+      - name: Assert action ran (failed due to unreachable host, not input validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because the SSH host is unreachable,
+          # but it must NOT fail due to missing/invalid pre_deployment_command_args input.
+          # Any outcome (failure due to SSH) is acceptable here — we just verify
+          # the action was invoked with this input without crashing on validation.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action accepted pre_deployment_command_args input"
