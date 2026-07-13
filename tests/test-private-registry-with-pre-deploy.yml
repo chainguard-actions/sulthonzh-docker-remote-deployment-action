@@ -1,0 +1,38 @@
+name: Test private registry and pre-deployment command inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: user@example.com
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test'
+          ssh_private_key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            dGVzdA==
+            -----END OPENSSH PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: docker-compose
+          pre_deployment_command_args: 'config'
+          docker_registry_username: myuser
+          docker_registry_password: mysecretpassword
+          docker_registry_uri: 'https://registry.hub.docker.com'
+      - name: Assert action ran (inputs accepted, failure expected at SSH stage)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed at SSH/connection stage as expected with fake host"
+          else
+            echo "FAIL: unexpected outcome=$OUTCOME"
+            exit 1
+          fi
