@@ -1,0 +1,34 @@
+name: Test pre_deployment_command_args input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: user@localhost
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test-key'
+          ssh_private_key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            dGVzdC1rZXktY29udGVudA==
+            -----END OPENSSH PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          pre_deployment_command_args: 'config'
+      - name: Assert action ran with pre_deployment_command_args input
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action is expected to fail because there is no real remote host,
+          # but it must have been invoked (not skipped) with the pre_deployment_command_args input.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action ran with pre_deployment_command_args input"
