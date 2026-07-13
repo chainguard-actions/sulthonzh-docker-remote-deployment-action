@@ -1,6 +1,6 @@
 # sulthonzh/docker-remote-deployment-action
 
-A GitHub Action that supports docker-compose and Docker Swarm deployments
+Secure GitHub Action for Docker Compose and Docker Swarm deployments via SSH. Includes input validation, automatic cleanup, and private registry support.
 
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/sulthonzh/docker-remote-deployment-action](https://github.com/sulthonzh/docker-remote-deployment-action).
 
