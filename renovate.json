@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "config:recommended",
+    "docker:enableMajor"
+  ],
+  "docker": {
+    "enabled": true,
+    "files": ["Dockerfile"]
+  },
+  "github-actions": {
+    "enabled": true,
+    "commitMessagePrefix": "chore(deps):"
+  },
+  "schedule": ["at any time on sunday"],
+  "assignees": ["sulthonzh"],
+  "reviewers": ["sulthonzh"],
+  "packageRules": [
+    {
+      "matchDepTypes": ["dependencies"],
+      "automerge": true
+    }
+  ],
+  "dependencyDashboard": true,
+  "suppressNotifications": ["prIgnoreNotification"],
+  "ignorePaths": ["**/docker-compose.yml"]
+}
