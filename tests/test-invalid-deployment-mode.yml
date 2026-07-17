@@ -16,12 +16,12 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMCTupLMbKhSMkFpB
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCTFHFBBHFBBHFBBHF
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
-          deployment_mode: 'invalid-mode'
+          deployment_mode: 'kubernetes'
 
-      - name: Assert action failed due to invalid deployment mode
+      - name: Assert action failed with invalid deployment_mode
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -30,4 +30,4 @@ jobs:
             echo "FAIL: expected action to fail with invalid deployment_mode, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with invalid deployment_mode"
+          echo "PASS: action correctly rejected invalid deployment_mode"

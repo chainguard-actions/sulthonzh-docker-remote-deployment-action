@@ -73,19 +73,21 @@ jobs:
         id: changelog
         run: |
           # Get tag name and sanitize to prevent newline injection
-          RAW_TAG=${GITHUB_REF#refs/tags/}
-          TAG=$(printf '%s' "$RAW_TAG" | tr -d '\n\r')
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          TAG=${GITHUB_REF#refs/tags/}
+          safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')
+          echo "tag=$safe_tag" >> "$GITHUB_OUTPUT"
 
           # Get commit messages since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -n "$LAST_TAG" ]; then
-            CHANGELOG=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)")
+            CHANGELOG=$(git log "$LAST_TAG..HEAD" --pretty=format:"- %s (%h)")
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" -10)
           fi
+          # Write changelog using heredoc delimiter to safely handle multi-line content
+          safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r')
           echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          echo "$safe_changelog" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Create Release

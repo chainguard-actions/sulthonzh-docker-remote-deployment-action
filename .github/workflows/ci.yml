@@ -6,13 +6,12 @@ on:
   pull_request:
     branches: [main]
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   shell-lint:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Lint shell script
@@ -21,8 +20,6 @@ jobs:
 
   dockerfile-lint:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Lint Dockerfile
@@ -31,8 +28,6 @@ jobs:
 
   validate-yaml:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Validate action.yml
@@ -43,8 +38,6 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Security scan with ShellCheck
@@ -59,8 +52,6 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     needs: [shell-lint, dockerfile-lint, validate-yaml]
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Test image runs
