@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-# Hardening Report: sulthonzh--docker-remote-deployment-action--/v1.4.39
+# Hardening Report: sulthonzh--docker-remote-deployment-action/v1.4.39
 
 > This file was generated automatically by the hardening agent.
 
@@ -8,53 +8,54 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
-Action **sulthonzh--docker-remote-deployment-action--/v1.4.39** was hardened automatically. 2 finding(s) were identified and resolved across 2 iteration(s).
+Action **sulthonzh--docker-remote-deployment-action/v1.4.39** was hardened automatically. 2 finding(s) were identified and resolved across 3 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-Multiple workflow files use mutable tag or branch refs instead of pinned 40-character SHA commit hashes, making them vulnerable to supply-chain attacks if the referenced action is compromised or its tag is moved.
+All `uses:` references in the workflow files use mutable tag or branch refs instead of immutable 40-character SHA digests, making the workflows vulnerable to supply-chain attacks if any referenced action is compromised or its tag is moved.
 
-ci.yml: actions/checkout@v4 (used 5 times)
+ci.yml: actions/checkout@v4 (×5 steps)
 
-release.yml: actions/checkout@v4, docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (x2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1
+code-review.yml: actions/checkout@v6 (×multiple steps), sulthonzh/code-reviewer@main (×multiple steps — also uses a branch ref 'main' which is especially dangerous)
 
-code-review.yml: actions/checkout@v6 (multiple steps), sulthonzh/code-reviewer@main (multiple steps — @main is a mutable branch ref)
+release.yml: actions/checkout@v4, docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (×2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1
 
 Locations:
 
 - `.github/workflows/ci.yml:12`
-- `.github/workflows/ci.yml:18`
-- `.github/workflows/ci.yml:25`
-- `.github/workflows/ci.yml:34`
-- `.github/workflows/ci.yml:44`
-- `.github/workflows/release.yml:14`
-- `.github/workflows/release.yml:17`
-- `.github/workflows/release.yml:20`
-- `.github/workflows/release.yml:23`
-- `.github/workflows/release.yml:28`
-- `.github/workflows/release.yml:33`
-- `.github/workflows/release.yml:42`
-- `.github/workflows/release.yml:56`
-- `.github/workflows/release.yml:68`
-- `.github/workflows/code-review.yml:20`
-- `.github/workflows/code-review.yml:26`
-- `.github/workflows/code-review.yml:40`
-- `.github/workflows/code-review.yml:44`
+- `.github/workflows/ci.yml:19`
+- `.github/workflows/ci.yml:26`
+- `.github/workflows/ci.yml:35`
+- `.github/workflows/ci.yml:46`
+- `.github/workflows/code-review.yml:18`
+- `.github/workflows/code-review.yml:23`
+- `.github/workflows/code-review.yml:37`
+- `.github/workflows/code-review.yml:42`
 - `.github/workflows/code-review.yml:57`
 - `.github/workflows/code-review.yml:68`
 - `.github/workflows/code-review.yml:75`
 - `.github/workflows/code-review.yml:83`
 - `.github/workflows/code-review.yml:90`
 - `.github/workflows/code-review.yml:97`
-- `.github/workflows/code-review.yml:104`
+- `.github/workflows/code-review.yml:103`
+- `.github/workflows/code-review.yml:109`
+- `.github/workflows/release.yml:13`
+- `.github/workflows/release.yml:17`
+- `.github/workflows/release.yml:21`
+- `.github/workflows/release.yml:25`
+- `.github/workflows/release.yml:31`
+- `.github/workflows/release.yml:37`
+- `.github/workflows/release.yml:55`
+- `.github/workflows/release.yml:68`
+- `.github/workflows/release.yml:96`
 
 ### missing-permissions (severity: medium)
 
-ci.yml has no top-level `permissions:` key and none of its jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define job-level permissions. This means the workflow runs with the default GitHub token permissions, which may be broader than necessary.
+The workflow file ci.yml has no top-level `permissions:` key and none of its jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level `permissions:` block. This means the workflow runs with the default GitHub token permissions, which may be broader than necessary (e.g., write access to contents and packages on some repository configurations).
 
 Locations:
 
@@ -68,17 +69,23 @@ Locations:
 
 **Notes:**
 
-1. ci.yml: Added top-level 'permissions: contents: read' block. Pinned all 5 occurrences of actions/checkout@v4 to SHA 34e114876b0b11c390a56381ad16ebd13914f8d5.
-2. release.yml: Pinned actions/checkout@v4 → 34e114876b0b11c390a56381ad16ebd13914f8d5, docker/setup-qemu-action@v3 → c7c53464625b32c7a7e944ae62b3e17d2b600130, docker/setup-buildx-action@v3 → 8d2750c68a42422c14e847fe6c8ac0403b4cbd6f, docker/login-action@v3 (x2) → c94ce9fb468520275223c153574b00df6fe4bcc9, docker/metadata-action@v5 → c299e40c65443455700f0fdfc63efafe5b349051, docker/build-push-action@v5 → ca052bb54ab0790a636c9b5f226502c73d547a25, softprops/action-gh-release@v1 → de2c0eb89ae2a093876385947365aca7b0e5f844.
-3. code-review.yml: Pinned all occurrences of actions/checkout@v6 → df4cb1c069e1874edd31b4311f1884172cec0e10 and sulthonzh/code-reviewer@main → d0c6f9c936438fbd487b575f55f739ba52f4cc37. All mutable tag/branch refs replaced with full 40-character commit SHAs with tag comments for readability.
+Fixed all unpinned `uses:` references across ci.yml, code-review.yml, and release.yml by replacing mutable tags/branches with full 40-character SHA digests (preserving the original tag/branch as a comment). Added `permissions: {}` top-level block to ci.yml since its jobs only run local shell commands and docker builds requiring no GitHub token permissions. All 26 unpinned action references have been pinned using SHAs resolved via lookup_action_sha.
 
-### Iteration 1
+### Iteration 2
 
 **Fixes applied:** github-env-injection
 
 **Notes:**
 
-Fixed both github-env-injection issues in .github/workflows/release.yml 'Generate changelog' step:
-1. TAG value: Added `safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')` sanitization before writing `echo "tag=$safe_tag" >> "$GITHUB_OUTPUT"`.
-2. CHANGELOG value: Added `safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r' | sed 's/^EOF$/[EOF]/')` to strip carriage returns and neutralize any line that equals the heredoc delimiter. Changed the heredoc delimiter from 'EOF' to 'CHANGELOG_DELIM' to reduce collision risk with commit message content. Used `printf '%s\n'` instead of `echo` for safer output writing.
+Fixed the 'Generate changelog' step in .github/workflows/release.yml:
+1. TAG sanitization (line 63): Added `safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')` and write `safe_tag` instead of raw `$TAG` to $GITHUB_OUTPUT.
+2. CHANGELOG sanitization (line 72): Added `safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r')` to strip carriage returns. Changed the heredoc delimiter from `EOF` to `CHANGELOG_EOF` to prevent a commit message containing a bare 'EOF' line from prematurely terminating the heredoc. Used `printf '%s\n'` to write the sanitized changelog content.
+
+### Iteration 3
+
+**Fixes applied:** suspicious-run-content
+
+**Notes:**
+
+Replaced `eval $(ssh-agent)` on line 218 of docker-entrypoint.sh with a safer alternative that starts ssh-agent with the `-s` flag, captures its output into a variable, then explicitly parses SSH_AUTH_SOCK and SSH_AGENT_PID using grep with Perl-compatible lookbehind regex, and exports them directly. This eliminates the eval-with-command-substitution pattern while preserving identical runtime behavior.
 
