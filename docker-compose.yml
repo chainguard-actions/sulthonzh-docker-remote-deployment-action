@@ -48,7 +48,7 @@ services:
       DB_HOST: db
       DB_NAME: myapp
       DB_USER: myuser
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: mypassword
     volumes:
       - ./src:/app/src:ro
     networks:

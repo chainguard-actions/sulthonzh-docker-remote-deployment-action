@@ -72,24 +72,20 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Get tag name and sanitize to prevent newline injection into GITHUB_OUTPUT
+          # Get tag name
           TAG=${GITHUB_REF#refs/tags/}
-          SAFE_TAG=$(printf '%s' "$TAG" | tr -d '\n\r')
-          echo "tag=$SAFE_TAG" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
           # Get commit messages since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -n "$LAST_TAG" ]; then
-            CHANGELOG=$(git log "$LAST_TAG..HEAD" --pretty=format:"- %s (%h)")
+            CHANGELOG=$(git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)")
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" -10)
           fi
-          # Sanitize changelog to prevent injection via attacker-controlled commit messages.
-          # Strip \r and \n to prevent newline injection, and neutralize the heredoc delimiter.
-          SAFE_CHANGELOG=$(printf '%s' "$CHANGELOG" | tr -d '\r\n' | sed 's/CHANGELOG_DELIMITER/CHANGELOG_DELIM1TER/g')
-          echo "changelog<<CHANGELOG_DELIMITER" >> "$GITHUB_OUTPUT"
-          printf '%s\n' "$SAFE_CHANGELOG" >> "$GITHUB_OUTPUT"
-          echo "CHANGELOG_DELIMITER" >> "$GITHUB_OUTPUT"
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
