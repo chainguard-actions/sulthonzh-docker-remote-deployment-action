@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-# Hardening Report: sulthonzh--docker-remote-deployment-action--/v1.4.40
+# Hardening Report: sulthonzh--docker-remote-deployment-action/v1.4.40
 
 > This file was generated automatically by the hardening agent.
 
@@ -8,59 +8,83 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
-Action **sulthonzh--docker-remote-deployment-action--/v1.4.40** was hardened automatically. 4 finding(s) were identified and resolved across 1 iteration(s).
+Action **sulthonzh--docker-remote-deployment-action/v1.4.40** was hardened automatically. 2 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-Multiple workflow files reference actions using mutable tags/branches instead of pinned full-length SHA commit hashes, making them vulnerable to supply-chain attacks.
+All `uses:` references across all three workflow files are pinned to mutable tags or branch names rather than immutable 40-character commit SHAs. This exposes the workflows to supply-chain attacks if any referenced action is compromised or its tag is moved.
 
-ci.yml: actions/checkout@v4 (×5 steps)
-code-review.yml: actions/checkout@v6 (×multiple steps), sulthonzh/code-reviewer@main (×7 steps)
-release.yml: actions/checkout@v4, docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (×2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1
+ci.yml: actions/checkout@v4 (×5)
+code-review.yml: actions/checkout@v6 (×4), sulthonzh/code-reviewer@main (×9)
+release.yml: actions/checkout@v4, docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (×2), docker/metadata-action@v5, docker/build-push-action@v5, actions/checkout@v4, softprops/action-gh-release@v1
 
 Locations:
 
 - `.github/workflows/ci.yml:12`
-- `.github/workflows/code-review.yml:20`
+- `.github/workflows/ci.yml:18`
+- `.github/workflows/ci.yml:24`
+- `.github/workflows/ci.yml:33`
+- `.github/workflows/ci.yml:43`
+- `.github/workflows/code-review.yml:19`
+- `.github/workflows/code-review.yml:25`
+- `.github/workflows/code-review.yml:42`
+- `.github/workflows/code-review.yml:48`
+- `.github/workflows/code-review.yml:60`
+- `.github/workflows/code-review.yml:72`
+- `.github/workflows/code-review.yml:78`
+- `.github/workflows/code-review.yml:84`
+- `.github/workflows/code-review.yml:92`
+- `.github/workflows/code-review.yml:98`
+- `.github/workflows/code-review.yml:104`
+- `.github/workflows/code-review.yml:110`
 - `.github/workflows/release.yml:14`
+- `.github/workflows/release.yml:17`
+- `.github/workflows/release.yml:20`
+- `.github/workflows/release.yml:23`
+- `.github/workflows/release.yml:28`
+- `.github/workflows/release.yml:33`
+- `.github/workflows/release.yml:38`
+- `.github/workflows/release.yml:50`
+- `.github/workflows/release.yml:62`
 
-### permissions (severity: medium)
+### missing-permissions (severity: medium)
 
-ci.yml has no top-level 'permissions:' key and none of its jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define job-level permissions. This means the workflow runs with the default, overly broad GITHUB_TOKEN permissions.
+The CI workflow file has no top-level `permissions:` key and none of its five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level `permissions:` block. Without explicit permissions, the workflow inherits the default token permissions, which may be overly broad (write access to contents and packages in many repository configurations).
 
 Locations:
 
 - `.github/workflows/ci.yml:1`
 
-### hardcoded-credentials (severity: high)
-
-docker-compose.yml contains a hardcoded literal password: 'DB_PASSWORD: mypassword'. Even in example/test compose files shipped with the action, hardcoded credentials are a security risk as they may be used as-is in production deployments.
-
-Locations:
-
-- `docker-compose.yml:43`
-
-### github-env-injection (severity: high)
-
-In release.yml, the 'Generate changelog' step writes values derived from potentially attacker-controlled sources to $GITHUB_OUTPUT without sanitization (no 'printf | tr -d newlines' step):
-1. 'echo "tag=$TAG" >> $GITHUB_OUTPUT' — TAG is derived from $GITHUB_REF (a git tag name that could contain newlines or special characters).
-2. 'echo "$CHANGELOG" >> $GITHUB_OUTPUT' — CHANGELOG is derived from git commit messages (attacker-controlled via PR/commit titles) and written directly without sanitization, enabling newline injection into GITHUB_OUTPUT.
-
-Locations:
-
-- `.github/workflows/release.yml:57`
-
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** unpinned-uses, permissions, hardcoded-credentials, github-env-injection
+**Fixes applied:** unpinned-uses, missing-permissions
 
 **Notes:**
 
-1. unpinned-uses: Pinned all action references to full commit SHAs in ci.yml (actions/checkout@v4 → @34e114876b0b11c390a56381ad16ebd13914f8d5 ×5), code-review.yml (actions/checkout@v6 → @df4cb1c069e1874edd31b4311f1884172cec0e10 ×6, sulthonzh/code-reviewer@main → @d0c6f9c936438fbd487b575f55f739ba52f4cc37 ×7), and release.yml (actions/checkout@v4, docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 ×2, docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1 all pinned to full SHAs). 2. permissions: Added top-level 'permissions: contents: read' to ci.yml. 3. hardcoded-credentials: Replaced 'DB_PASSWORD: mypassword' in docker-compose.yml with '${DB_PASSWORD:?DB_PASSWORD environment variable must be set}' to require the value be supplied via environment variable. 4. github-env-injection: Fixed the Generate changelog step in release.yml to sanitize TAG (via printf | tr -d newlines) before writing to GITHUB_OUTPUT, and sanitize CHANGELOG (stripping carriage returns) before writing via heredoc with a unique delimiter (__CHANGELOG_EOF__) to prevent injection.
+Fixed all three workflow files:
+
+**ci.yml**:
+- Added top-level `permissions: contents: read` block to address missing-permissions finding
+- Pinned all 5 `actions/checkout@v4` references to SHA `34e114876b0b11c390a56381ad16ebd13914f8d5`
+
+**code-review.yml** (already had permissions block, only unpinned-uses fixed):
+- Pinned 4 `actions/checkout@v6` references to SHA `df4cb1c069e1874edd31b4311f1884172cec0e10`
+- Pinned 9 `sulthonzh/code-reviewer@main` references to SHA `d882af6cd1ae55f692c0a8dfc6ff464115ccf89c`
+
+**release.yml** (already had job-level permissions, only unpinned-uses fixed):
+- Pinned `actions/checkout@v4` (×2) to SHA `34e114876b0b11c390a56381ad16ebd13914f8d5`
+- Pinned `docker/setup-qemu-action@v3` to SHA `c7c53464625b32c7a7e944ae62b3e17d2b600130`
+- Pinned `docker/setup-buildx-action@v3` to SHA `8d2750c68a42422c14e847fe6c8ac0403b4cbd6f`
+- Pinned `docker/login-action@v3` (×2) to SHA `c94ce9fb468520275223c153574b00df6fe4bcc9`
+- Pinned `docker/metadata-action@v5` to SHA `c299e40c65443455700f0fdfc63efafe5b349051`
+- Pinned `docker/build-push-action@v5` to SHA `ca052bb54ab0790a636c9b5f226502c73d547a25`
+- Pinned `softprops/action-gh-release@v1` to SHA `de2c0eb89ae2a093876385947365aca7b0e5f844`
+
+All original tags are preserved as inline comments (e.g., `# v4`) for readability.
 

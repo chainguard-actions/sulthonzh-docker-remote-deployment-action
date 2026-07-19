@@ -1,4 +1,4 @@
-name: Test path traversal prevention
+name: Test path traversal prevention in deploy_path
 on:
   workflow_dispatch:
 jobs:
@@ -12,20 +12,20 @@ jobs:
         continue-on-error: true
         with:
           remote_docker_host: 'user@example.com'
-          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@example'
           ssh_private_key: |
-            -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMVQFMBMHBBBBBBBB
-            -----END RSA PRIVATE KEY-----
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            b3BlbnNzaC1rZXktdjEAAAAA
+            -----END OPENSSH PRIVATE KEY-----
           args: 'up -d'
-          deploy_path: '/opt/../../etc/cron.d'
-      - name: Assert action failed with path traversal
+          deploy_path: '/opt/../../../etc'
+      - name: Assert action failed due to path traversal attempt
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with path traversal in deploy_path"
+            echo "FAIL: expected action to fail with path traversal in deploy_path, but got outcome=$OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected path traversal in deploy_path"
+          echo "PASS: action correctly rejected deploy_path with path traversal patterns"

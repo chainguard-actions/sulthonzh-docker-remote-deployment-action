@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
       - name: Scan diff for secrets
         id: scan
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: secret-scan
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 0
       - name: Detect project context
         id: context
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: detect-context
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -67,7 +67,7 @@ jobs:
           fi
       - name: Run AI review
         id: review
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: ai-review
           model: ${{ steps.model.outputs.model }}
@@ -88,13 +88,13 @@ jobs:
           fetch-depth: 0
       - name: Run quality checks
         id: gate
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: quality-gate
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Post status
         if: always()
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: post-status
           passed: ${{ steps.gate.outputs.passed }}
@@ -111,7 +111,7 @@ jobs:
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - name: Approve and merge
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: auto-merge
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -127,7 +127,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Detect and release
-        uses: sulthonzh/code-reviewer@d0c6f9c936438fbd487b575f55f739ba52f4cc37 # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: auto-release
           github-token: ${{ secrets.GITHUB_TOKEN }}
