@@ -1,22 +1,26 @@
 name: Test invalid remote_docker_host format
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - id: action
+
+      - name: Run action with invalid host format (no user@)
+        id: action
         uses: .
         continue-on-error: true
         with:
-          remote_docker_host: 'notavalidhost'
-          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          remote_docker_host: 'just-a-hostname'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test'
           ssh_private_key: |
-            -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCHBFmHMHHFMHHFMHH
-            -----END RSA PRIVATE KEY-----
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            dGVzdA==
+            -----END OPENSSH PRIVATE KEY-----
           args: 'up -d'
+
       - name: Assert action failed due to invalid host format
         env:
           OUTCOME: ${{ steps.action.outcome }}
