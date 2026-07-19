@@ -1,4 +1,4 @@
-name: Test invalid remote_docker_port
+name: Test command injection prevention
 on:
   workflow_dispatch:
 jobs:
@@ -7,52 +7,50 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with out-of-range port
-        id: action
+      - name: Run action with semicolon injection in args
+        id: action_semicolon
         continue-on-error: true
         uses: .
         with:
           remote_docker_host: 'user@example.com'
-          remote_docker_port: '99999'
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
             MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMFMNBMHMFMNBMH
             -----END RSA PRIVATE KEY-----
-          args: 'up -d'
+          args: 'up -d; rm -rf /'
 
-      - name: Assert action failed with invalid port
+      - name: Assert action failed with semicolon injection
         env:
-          OUTCOME: ${{ steps.action.outcome }}
+          OUTCOME: ${{ steps.action_semicolon.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with invalid port, but got: $OUTCOME"
+            echo "FAIL: expected action to fail with semicolon injection, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected out-of-range port"
+          echo "PASS: action correctly rejected semicolon injection"
 
-      - name: Run action with non-numeric port
-        id: action2
+      - name: Run action with pipe injection in args
+        id: action_pipe
         continue-on-error: true
         uses: .
         with:
           remote_docker_host: 'user@example.com'
-          remote_docker_port: 'notaport'
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
             MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMFMNBMHMFMNBMH
             -----END RSA PRIVATE KEY-----
-          args: 'up -d'
+          args: 'up -d | cat /etc/passwd'
 
-      - name: Assert action failed with non-numeric port
+      - name: Assert action failed with pipe injection
         env:
-          OUTCOME: ${{ steps.action2.outcome }}
+          OUTCOME: ${{ steps.action_pipe.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with non-numeric port, but got: $OUTCOME"
+            echo "FAIL: expected action to fail with pipe injection, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected non-numeric port"
+          echo "PASS: action correctly rejected pipe injection"

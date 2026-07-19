@@ -12,10 +12,13 @@ jobs:
         continue-on-error: true
         uses: .
         with:
-          remote_docker_host: "notavalidhost"
-          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test"
-          ssh_private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhHKMFBMBBBBBBB\n-----END RSA PRIVATE KEY-----"
-          args: "up -d"
+          remote_docker_host: 'just-a-hostname'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMFMNBMHMFMNBMH
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
 
       - name: Assert action failed with invalid host format
         env:
@@ -23,7 +26,7 @@ jobs:
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with invalid host format, but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail with invalid host format, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with invalid host format"
+          echo "PASS: action correctly rejected invalid host format"

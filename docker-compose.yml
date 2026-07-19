@@ -50,7 +50,7 @@ services:
       DB_HOST: db
       DB_NAME: myapp
       DB_USER: myuser
-      DB_PASSWORD: mypassword
+      DB_PASSWORD: "${DB_PASSWORD}"  # Set DB_PASSWORD as an environment variable or secret
     volumes:
       - ./src:/app/src:ro
     networks:

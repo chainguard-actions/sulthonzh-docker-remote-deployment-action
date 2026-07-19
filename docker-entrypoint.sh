@@ -261,14 +261,7 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-# Start ssh-agent and export its environment variables without using eval
-# ssh-agent -s outputs lines like: SSH_AUTH_SOCK=/tmp/...; export SSH_AUTH_SOCK;
-# We parse these directly to avoid eval with command substitution.
-_ssh_agent_output=$(ssh-agent -s)
-SSH_AUTH_SOCK=$(printf '%s\n' "$_ssh_agent_output" | grep -oP '(?<=SSH_AUTH_SOCK=)[^;]+')
-SSH_AGENT_PID=$(printf '%s\n' "$_ssh_agent_output" | grep -oP '(?<=SSH_AGENT_PID=)[^;]+')
-export SSH_AUTH_SOCK SSH_AGENT_PID
-unset _ssh_agent_output
+eval $(ssh-agent)
 ssh-add ~/.ssh/id_rsa
 
 # Note: ssh-keyscan is intentionally omitted. Both execute_ssh and scp use

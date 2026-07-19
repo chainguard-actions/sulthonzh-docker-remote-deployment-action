@@ -7,24 +7,52 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with non-numeric keep_files
-        id: action
+      - name: Run action with zero keep_files
+        id: action_zero
         continue-on-error: true
         uses: .
         with:
-          remote_docker_host: "user@example.com"
-          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test"
-          ssh_private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhHKMFBMBBBBBBB\n-----END RSA PRIVATE KEY-----"
-          args: "up -d"
-          keep_files: "notanumber"
+          remote_docker_host: 'user@example.com'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMFMNBMHMFMNBMH
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          keep_files: '0'
 
-      - name: Assert action failed with invalid keep_files
+      - name: Assert action failed with zero keep_files
         env:
-          OUTCOME: ${{ steps.action.outcome }}
+          OUTCOME: ${{ steps.action_zero.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with non-numeric keep_files, but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail with keep_files=0, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with invalid keep_files value"
+          echo "PASS: action correctly rejected keep_files=0"
+
+      - name: Run action with non-numeric keep_files
+        id: action_nonnumeric
+        continue-on-error: true
+        uses: .
+        with:
+          remote_docker_host: 'user@example.com'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMFMNBMHMFMNBMH
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          keep_files: 'many'
+
+      - name: Assert action failed with non-numeric keep_files
+        env:
+          OUTCOME: ${{ steps.action_nonnumeric.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with non-numeric keep_files, but got: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly rejected non-numeric keep_files"
