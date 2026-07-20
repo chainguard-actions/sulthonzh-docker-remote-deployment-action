@@ -8,44 +8,54 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
-Action **sulthonzh--docker-remote-deployment-action/v1.4.55** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
+Action **sulthonzh--docker-remote-deployment-action/v1.4.55** was hardened automatically. 3 finding(s) were identified and resolved across 2 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-Multiple workflow files use mutable tag/branch refs instead of pinned 40-character SHA commits, making them vulnerable to supply-chain attacks if the referenced action is compromised or its tag is moved.
+All three workflow files reference actions using mutable version tags or branch names instead of pinned 40-character commit SHAs. This exposes the workflow to supply-chain attacks if any referenced action is compromised or its tag is moved.
 
-- ci.yml: `actions/checkout@v4` used in 5 steps
-- code-review.yml: `actions/checkout@v6` used in 5 steps; `sulthonzh/code-reviewer@main` used in 7 steps (branch ref — highest risk)
-- release.yml: `actions/checkout@v4`, `docker/setup-qemu-action@v3`, `docker/setup-buildx-action@v3`, `docker/login-action@v3` (×2), `docker/metadata-action@v5`, `docker/build-push-action@v5`, `softprops/action-gh-release@v1`
+ci.yml: actions/checkout@v4 (x5)
+
+code-review.yml: actions/checkout@v6 (x5), sulthonzh/code-reviewer@main (x7 — especially dangerous as @main is a moving branch ref)
+
+release.yml: actions/checkout@v4 (x2), docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (x2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1
 
 Locations:
 
-- `.github/workflows/ci.yml:12`
-- `.github/workflows/ci.yml:20`
-- `.github/workflows/ci.yml:28`
-- `.github/workflows/ci.yml:36`
-- `.github/workflows/ci.yml:46`
-- `.github/workflows/code-review.yml:22`
-- `.github/workflows/code-review.yml:33`
-- `.github/workflows/code-review.yml:43`
-- `.github/workflows/code-review.yml:55`
-- `.github/workflows/code-review.yml:65`
+- `.github/workflows/ci.yml:11`
+- `.github/workflows/ci.yml:17`
+- `.github/workflows/ci.yml:23`
+- `.github/workflows/ci.yml:30`
+- `.github/workflows/ci.yml:42`
+- `.github/workflows/code-review.yml:19`
+- `.github/workflows/code-review.yml:25`
+- `.github/workflows/code-review.yml:40`
+- `.github/workflows/code-review.yml:45`
+- `.github/workflows/code-review.yml:57`
+- `.github/workflows/code-review.yml:68`
+- `.github/workflows/code-review.yml:75`
+- `.github/workflows/code-review.yml:82`
+- `.github/workflows/code-review.yml:93`
+- `.github/workflows/code-review.yml:95`
+- `.github/workflows/code-review.yml:103`
+- `.github/workflows/code-review.yml:110`
 - `.github/workflows/release.yml:18`
 - `.github/workflows/release.yml:21`
 - `.github/workflows/release.yml:24`
 - `.github/workflows/release.yml:27`
-- `.github/workflows/release.yml:34`
-- `.github/workflows/release.yml:41`
-- `.github/workflows/release.yml:53`
-- `.github/workflows/release.yml:70`
+- `.github/workflows/release.yml:33`
+- `.github/workflows/release.yml:40`
+- `.github/workflows/release.yml:50`
+- `.github/workflows/release.yml:63`
+- `.github/workflows/release.yml:80`
 
 ### missing-permissions (severity: medium)
 
-ci.yml has no top-level `permissions:` key and none of its 5 jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level `permissions:` block. This means the workflow runs with the default, overly-broad GITHUB_TOKEN permissions (read for most scopes, write for contents/packages on push events).
+ci.yml has no top-level `permissions:` key and none of its five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level `permissions:` block. The workflow therefore runs with GitHub's default token permissions, which include write access to repository contents and packages on push events. This violates the principle of least privilege.
 
 Locations:
 
@@ -53,12 +63,11 @@ Locations:
 
 ### github-env-injection (severity: high)
 
-In release.yml, the 'Generate changelog' step writes `$CHANGELOG` — populated from `git log` commit messages — to `$GITHUB_OUTPUT` without sanitization (`printf '%s' ... | tr -d '\n\r'`). Commit messages are attacker-controllable (any contributor can craft a commit message containing newlines or special sequences), enabling injection of arbitrary key=value pairs into the GitHub output context. The `$TAG` value derived from `$GITHUB_REF` is also written unsanitized. Affected lines: `echo "tag=$TAG" >> $GITHUB_OUTPUT` and `echo "$CHANGELOG" >> $GITHUB_OUTPUT`.
+In the 'Generate changelog' step of release.yml, the variable $CHANGELOG is populated from `git log` commit subject lines (attacker-controllable via crafted commit messages) and written directly to $GITHUB_OUTPUT without sanitization: `echo "$CHANGELOG" >> $GITHUB_OUTPUT`. A commit message containing a newline followed by `key=value` could inject additional output variables into $GITHUB_OUTPUT. The static heredoc delimiter `EOF` is also vulnerable: a commit message containing `EOF` on its own line would prematurely terminate the heredoc and allow injection of arbitrary content. The required sanitization (`printf '%s' "$CHANGELOG" | tr -d '\n\r'`) is absent.
 
 Locations:
 
-- `.github/workflows/release.yml:77`
-- `.github/workflows/release.yml:87`
+- `.github/workflows/release.yml:76`
 
 ## Iteration Notes
 
@@ -68,20 +77,19 @@ Locations:
 
 **Notes:**
 
-Fixed all three findings across the three workflow files:
+Fixed all three findings:
 
-1. **unpinned-uses** (ci.yml, code-review.yml, release.yml):
-   - `actions/checkout@v4` → pinned to SHA `34e114876b0b11c390a56381ad16ebd13914f8d5` (ci.yml ×5, release.yml ×2)
-   - `actions/checkout@v6` → pinned to SHA `df4cb1c069e1874edd31b4311f1884172cec0e10` (code-review.yml ×5)
-   - `sulthonzh/code-reviewer@main` → pinned to SHA `4546aa400043740f47f0023b54663fdb592b253f` (code-review.yml ×7)
-   - `docker/setup-qemu-action@v3` → pinned to SHA `c7c53464625b32c7a7e944ae62b3e17d2b600130`
-   - `docker/setup-buildx-action@v3` → pinned to SHA `8d2750c68a42422c14e847fe6c8ac0403b4cbd6f`
-   - `docker/login-action@v3` → pinned to SHA `c94ce9fb468520275223c153574b00df6fe4bcc9` (×2)
-   - `docker/metadata-action@v5` → pinned to SHA `c299e40c65443455700f0fdfc63efafe5b349051`
-   - `docker/build-push-action@v5` → pinned to SHA `ca052bb54ab0790a636c9b5f226502c73d547a25`
-   - `softprops/action-gh-release@v1` → pinned to SHA `de2c0eb89ae2a093876385947365aca7b0e5f844`
+1. unpinned-uses: Pinned all action references to full 40-char commit SHAs in all three workflow files (ci.yml x5, code-review.yml x12, release.yml x9). Original tags preserved as inline comments.
 
-2. **missing-permissions** (ci.yml): Added `permissions: {}` at the top level to restrict the GITHUB_TOKEN to no permissions by default.
+2. missing-permissions: Added top-level `permissions: contents: read` to ci.yml, which had no permissions block at all.
 
-3. **github-env-injection** (release.yml): The 'Generate changelog' step now sanitizes the TAG value using `printf '%s' "$RAW_TAG" | tr -d '\n\r'` before writing to GITHUB_OUTPUT. The CHANGELOG is written using a randomized heredoc delimiter (generated with `openssl rand -hex 8`) to prevent delimiter injection, and carriage returns are stripped with `tr -d '\r'`.
+3. github-env-injection: Replaced the vulnerable heredoc pattern in release.yml's 'Generate changelog' step (where a commit message containing 'EOF' could terminate the heredoc prematurely and inject content) with a sanitized single-line approach using `printf '%s' "$CHANGELOG" | tr -d '\r'` before writing to $GITHUB_OUTPUT. Also sanitized the TAG value with `tr -d '\n\r'`.
+
+### Iteration 1
+
+**Fixes applied:** github-env-injection
+
+**Notes:**
+
+Fixed the GITHUB_OUTPUT injection vulnerability in the 'Generate changelog' step of .github/workflows/release.yml. Changed the sanitization of `safe_changelog` from `tr -d '\r'` (which only removed carriage returns) to `tr -d '\n\r'` (which removes both newlines and carriage returns). This prevents attacker-controlled commit messages containing newline characters from injecting additional key=value pairs into the $GITHUB_OUTPUT file. The fix is consistent with how `safe_tag` is already sanitized in the same step.
 

@@ -72,10 +72,10 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Get tag name and sanitize (strip newlines/carriage returns)
-          RAW_TAG="${GITHUB_REF#refs/tags/}"
-          TAG=$(printf '%s' "$RAW_TAG" | tr -d '\n\r')
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          # Get tag name
+          TAG=${GITHUB_REF#refs/tags/}
+          safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')
+          echo "tag=$safe_tag" >> "$GITHUB_OUTPUT"
 
           # Get commit messages since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -84,15 +84,9 @@ jobs:
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" -10)
           fi
-
-          # Write changelog using heredoc with a random delimiter to avoid injection
-          # Sanitize by stripping any line that contains the delimiter
-          DELIM="CHANGELOG_EOF_$(openssl rand -hex 8)"
-          {
-            printf 'changelog<<%s\n' "$DELIM"
-            printf '%s\n' "$CHANGELOG" | tr -d '\r'
-            printf '%s\n' "$DELIM"
-          } >> "$GITHUB_OUTPUT"
+          # Sanitize changelog: strip newlines to prevent GITHUB_OUTPUT injection
+          safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\n\r' | sed 's/%/%25/g')
+          echo "changelog=$safe_changelog" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
