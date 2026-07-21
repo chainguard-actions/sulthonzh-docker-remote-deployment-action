@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with invalid host format (no user@)
+      - name: Run action with invalid host format (no user@host)
         id: action
         uses: .
         continue-on-error: true
@@ -16,7 +16,7 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCTBMFBsRNBMbNBMbN
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFBBBBBBBBBBBBBB
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
 

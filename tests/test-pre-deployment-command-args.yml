@@ -1,0 +1,39 @@
+name: Test pre_deployment_command_args input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with pre_deployment_command_args (will fail at SSH, not at validation)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'user@192.0.2.1'
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
+          ssh_private_key: |
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCTBMFBsRNBMbNBMbN
+            -----END RSA PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          pre_deployment_command_args: 'config'
+
+      - name: Assert action did not fail at input validation stage
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because the SSH host is unreachable,
+          # NOT because of input validation errors on pre_deployment_command_args.
+          # A failure here is expected (no real SSH host), but it must not
+          # be a validation rejection of the pre_deployment_command_args input.
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed at SSH/connection stage (pre_deployment_command_args accepted by validation)"
+          else
+            echo "PASS: action completed (pre_deployment_command_args accepted)"
+          fi

@@ -261,11 +261,10 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-_ssh_agent_out="$(ssh-agent -s)"
-SSH_AUTH_SOCK="$(printf '%s\n' "$_ssh_agent_out" | grep -oP '(?<=SSH_AUTH_SOCK=)[^;]+')"
-SSH_AGENT_PID="$(printf '%s\n' "$_ssh_agent_out" | grep -oP '(?<=SSH_AGENT_PID=)[^;]+')"
+SSH_AGENT_OUTPUT=$(ssh-agent)
+SSH_AUTH_SOCK=$(printf '%s\n' "$SSH_AGENT_OUTPUT" | grep -oP '(?<=SSH_AUTH_SOCK=)[^;]+')
+SSH_AGENT_PID=$(printf '%s\n' "$SSH_AGENT_OUTPUT" | grep -oP '(?<=SSH_AGENT_PID=)[^;]+')
 export SSH_AUTH_SOCK SSH_AGENT_PID
-unset _ssh_agent_out
 ssh-add ~/.ssh/id_rsa
 
 # Note: ssh-keyscan is intentionally omitted. Both execute_ssh and scp use
@@ -351,7 +350,9 @@ if ! [ -z "${INPUT_COPY_STACK_FILE+x}" ] && [ "$INPUT_COPY_STACK_FILE" = 'true' 
   execute_ssh "${DEPLOYMENT_COMMAND}" "$INPUT_ARGS" 2>&1
 else
   echo "Connecting to $INPUT_REMOTE_DOCKER_HOST... Command: ${DEPLOYMENT_COMMAND} ${INPUT_ARGS}"
-  # Use eval to safely execute the command string, preserving spacing and special characters in arguments
-  # Variables are validated earlier to prevent command injection
-  eval "${DEPLOYMENT_COMMAND} ${INPUT_ARGS}" 2>&1
+  # Build command as an array to avoid eval with user-controlled input
+  # DEPLOYMENT_COMMAND is constructed from validated, internal variables only
+  # INPUT_ARGS is validated input passed as a separate argument
+  read -ra CMD_ARRAY <<< "${DEPLOYMENT_COMMAND}"
+  "${CMD_ARRAY[@]}" ${INPUT_ARGS} 2>&1
 fi
