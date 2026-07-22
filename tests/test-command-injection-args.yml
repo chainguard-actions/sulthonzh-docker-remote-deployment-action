@@ -1,4 +1,4 @@
-name: Test invalid remote_docker_host format
+name: Test command injection prevention in args
 on:
   workflow_dispatch:
 jobs:
@@ -8,25 +8,25 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - id: action
-        name: Run action with invalid host format (no user@)
+        name: Run action with command injection attempt in args
         uses: .
         continue-on-error: true
         with:
-          remote_docker_host: 'just-a-hostname'
+          remote_docker_host: 'user@example.com'
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
             MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCFBHFTMBMFBGMFBGM
             -----END RSA PRIVATE KEY-----
-          args: 'up -d'
+          args: 'up -d; rm -rf /'
 
-      - name: Assert action failed due to invalid host format
+      - name: Assert action failed due to command injection in args
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with invalid host format, but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail with command injection in args, but got outcome=$OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected invalid host format"
+          echo "PASS: action correctly rejected command injection attempt in args"

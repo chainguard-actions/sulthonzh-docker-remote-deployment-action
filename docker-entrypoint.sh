@@ -267,7 +267,8 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-eval $(ssh-agent)
+SSH_AGENT_OUTPUT=$(ssh-agent)
+eval "$SSH_AGENT_OUTPUT"
 ssh-add ~/.ssh/id_rsa
 
 # Note: ssh-keyscan is intentionally omitted. Both execute_ssh and scp use
