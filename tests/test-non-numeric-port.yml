@@ -1,4 +1,4 @@
-name: Test non-numeric remote_docker_port validation
+name: Test non-numeric remote_docker_port
 on:
   workflow_dispatch:
 jobs:
@@ -17,11 +17,11 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMpYGFMKMBqMoFN
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhGSBMBqnMFBMHi
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
 
-      - name: Assert action failed due to non-numeric port
+      - name: Assert action failed with non-numeric port
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |

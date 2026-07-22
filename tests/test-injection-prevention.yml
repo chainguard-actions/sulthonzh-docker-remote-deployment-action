@@ -16,11 +16,11 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMpYGFMKMBqMoFN
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhGSBMBqnMFBMHi
             -----END RSA PRIVATE KEY-----
           args: 'up -d; rm -rf /'
 
-      - name: Assert action failed due to injection attempt
+      - name: Assert action failed with injection attempt
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -29,4 +29,4 @@ jobs:
             echo "FAIL: expected action to fail with injection attempt in args, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected injection attempt in args"
+          echo "PASS: action correctly rejected args with shell metacharacters"

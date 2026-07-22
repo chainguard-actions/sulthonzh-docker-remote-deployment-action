@@ -1,4 +1,4 @@
-name: Test invalid keep_files validation
+name: Test invalid keep_files value
 on:
   workflow_dispatch:
 jobs:
@@ -16,18 +16,18 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMpYGFMKMBqMoFN
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhGSBMBqnMFBMHi
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
           keep_files: '0'
 
-      - name: Assert action failed due to keep_files being 0
+      - name: Assert action failed with keep_files=0
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with keep_files=0 (must be >= 1), but got: $OUTCOME"
+            echo "FAIL: expected action to fail with keep_files=0, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected keep_files=0"
+          echo "PASS: action correctly rejected keep_files=0 (must be at least 1)"

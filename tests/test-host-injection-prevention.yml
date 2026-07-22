@@ -1,4 +1,4 @@
-name: Test injection prevention in remote_docker_host
+name: Test command injection prevention in remote_docker_host
 on:
   workflow_dispatch:
 jobs:
@@ -16,11 +16,11 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCGFMpYGFMKMBqMoFN
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhGSBMBqnMFBMHi
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
 
-      - name: Assert action failed due to injection in host
+      - name: Assert action failed with injection in host
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -29,4 +29,4 @@ jobs:
             echo "FAIL: expected action to fail with injection attempt in remote_docker_host, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected injection attempt in remote_docker_host"
+          echo "PASS: action correctly rejected remote_docker_host with shell metacharacters"

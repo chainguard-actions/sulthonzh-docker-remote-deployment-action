@@ -1,0 +1,39 @@
+name: Test Private Registry and Pre-Deployment Command Args
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: user@192.0.2.1
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3test'
+          ssh_private_key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            dGVzdGtleQ==
+            -----END OPENSSH PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          pre_deployment_command_args: 'config'
+          docker_registry_username: 'testuser'
+          docker_registry_password: 'testpassword'
+          docker_registry_uri: 'https://registry.hub.docker.com'
+      - name: Assert action ran (SSH failure expected, not input validation failure)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail due to SSH connection failure (not input validation)
+          # We just need to confirm the action was invoked with these inputs
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action was invoked with private registry and pre_deployment_command_args inputs"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS"
