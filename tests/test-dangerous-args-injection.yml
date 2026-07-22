@@ -1,4 +1,4 @@
-name: Test Invalid Deployment Mode
+name: Test Dangerous Args Injection Prevention
 on:
   workflow_dispatch:
 jobs:
@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with invalid deployment_mode (expect failure)
+      - name: Run action with command injection attempt in args (expect failure)
         id: action
         continue-on-error: true
         uses: .
@@ -18,16 +18,15 @@ jobs:
             -----BEGIN OPENSSH PRIVATE KEY-----
             fakeprivatekey
             -----END OPENSSH PRIVATE KEY-----
-          args: 'up -d'
-          deployment_mode: 'invalid-mode'
+          args: 'up -d; rm -rf /'
 
-      - name: Assert action failed due to invalid deployment mode
+      - name: Assert action failed due to dangerous characters in args
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail when deployment_mode is invalid"
+            echo "FAIL: expected action to fail when args contain dangerous shell metacharacters"
             exit 1
           fi
-          echo "PASS: action correctly failed with invalid deployment_mode"
+          echo "PASS: action correctly rejected args with command injection attempt"

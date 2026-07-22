@@ -1,4 +1,4 @@
-name: Test Pre-Deployment Command Args Input
+name: Test Private Registry Authentication Inputs
 on:
   workflow_dispatch:
 jobs:
@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with pre_deployment_command_args (expect failure at SSH stage)
+      - name: Run action with private registry credentials (expect failure at SSH stage)
         id: action
         continue-on-error: true
         uses: .
@@ -20,7 +20,9 @@ jobs:
             -----END OPENSSH PRIVATE KEY-----
           args: 'up -d'
           deployment_mode: 'docker-compose'
-          pre_deployment_command_args: 'config'
+          docker_registry_username: 'myregistryuser'
+          docker_registry_password: 'myregistrypassword'
+          docker_registry_uri: 'https://registry.hub.docker.com'
 
       - name: Assert action failed (SSH connection to fake host expected to fail)
         env:
@@ -31,4 +33,4 @@ jobs:
             echo "FAIL: expected action to fail when connecting to unreachable host with fake SSH key"
             exit 1
           fi
-          echo "PASS: action correctly failed at SSH connection stage (pre_deployment_command_args was accepted)"
+          echo "PASS: action correctly failed at SSH connection stage (registry inputs were accepted)"
