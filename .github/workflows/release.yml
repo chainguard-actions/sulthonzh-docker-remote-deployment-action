@@ -72,7 +72,7 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Get tag name
+          # Get tag name and sanitize to prevent newline injection into GITHUB_OUTPUT
           TAG=${GITHUB_REF#refs/tags/}
           safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')
           echo "tag=$safe_tag" >> "$GITHUB_OUTPUT"
@@ -84,10 +84,12 @@ jobs:
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" -10)
           fi
-          safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r')
-          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          # Sanitize changelog: remove carriage returns and strip any line that equals the
+          # heredoc delimiter to prevent premature termination of the output block.
+          safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r' | grep -v '^CHANGELOG_EOF$')
+          echo "changelog<<CHANGELOG_EOF" >> "$GITHUB_OUTPUT"
           echo "$safe_changelog" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "CHANGELOG_EOF" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
