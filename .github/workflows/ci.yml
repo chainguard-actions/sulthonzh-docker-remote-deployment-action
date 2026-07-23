@@ -12,7 +12,7 @@ jobs:
   shell-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Lint shell script
         run: bash -n docker-entrypoint.sh
         shell: bash
@@ -20,7 +20,7 @@ jobs:
   dockerfile-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Lint Dockerfile
         run: docker build --no-cache -t test-action . || exit 1
         shell: bash
@@ -28,7 +28,7 @@ jobs:
   validate-yaml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Validate action.yml
         run: |
           # Basic validation: check if action.yml is valid YAML
@@ -38,7 +38,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Security scan with ShellCheck
         run: |
           # Install ShellCheck if not available
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [shell-lint, dockerfile-lint, validate-yaml]
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Test image builds and entrypoint is executable
         run: |
           docker build --no-cache -t test-action .
