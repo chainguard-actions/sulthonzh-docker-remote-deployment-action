@@ -16,19 +16,18 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCTBMFBsKMBBMBMBMB
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCFBMFmMVMBMGMBMGM
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
-          deployment_mode: 'docker-compose'
           keep_files: '0'
 
-      - name: Assert action failed due to keep_files being zero
+      - name: Assert action failed with keep_files validation error
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with keep_files=0, but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail due to keep_files=0, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with keep_files=0"
+          echo "PASS: action correctly failed for keep_files=0"
