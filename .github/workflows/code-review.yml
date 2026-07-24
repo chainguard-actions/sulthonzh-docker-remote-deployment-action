@@ -25,12 +25,12 @@ jobs:
     outputs:
       secrets_found: ${{ steps.scan.outputs.found }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
       - name: Scan diff for secrets
         id: scan
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: secret-scan
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -47,12 +47,12 @@ jobs:
     outputs:
       approved: ${{ steps.review.outputs.approved }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
       - name: Detect project context
         id: context
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: detect-context
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -67,7 +67,7 @@ jobs:
           fi
       - name: Run AI review
         id: review
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: ai-review
           model: ${{ steps.model.outputs.model }}
@@ -83,18 +83,18 @@ jobs:
     outputs:
       passed: ${{ steps.gate.outputs.passed }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
       - name: Run quality checks
         id: gate
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: quality-gate
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Post status
         if: always()
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: post-status
           passed: ${{ steps.gate.outputs.passed }}
@@ -109,9 +109,9 @@ jobs:
       needs.quality-gate.outputs.passed == 'true' &&
       github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Approve and merge
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: auto-merge
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -123,11 +123,11 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
       - name: Detect and release
-        uses: sulthonzh/code-reviewer@4546aa400043740f47f0023b54663fdb592b253f # main
+        uses: sulthonzh/code-reviewer@d882af6cd1ae55f692c0a8dfc6ff464115ccf89c # main
         with:
           command: auto-release
           github-token: ${{ secrets.GITHUB_TOKEN }}

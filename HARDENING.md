@@ -8,72 +8,87 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
-Action **sulthonzh--docker-remote-deployment-action/v1.4.47** was hardened automatically. 3 finding(s) were identified and resolved across 2 iteration(s).
+Action **sulthonzh--docker-remote-deployment-action/v1.4.47** was hardened automatically. 2 finding(s) were identified and resolved across 2 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-All workflow files use mutable tag or branch refs instead of immutable 40-character SHA commit hashes, making them vulnerable to supply-chain attacks if the referenced action is compromised or its tag is moved. Failing references: ci.yml — actions/checkout@v4 (×5); code-review.yml — actions/checkout@v6, sulthonzh/code-reviewer@main (×8 occurrences); release.yml — actions/checkout@v4, docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (×2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1.
+Multiple workflow files reference external actions using mutable tags or branch names instead of pinned 40-character commit SHAs. This exposes the workflow to supply-chain attacks where a tag or branch can be silently updated to point to malicious code.
+
+**.github/workflows/ci.yml** — all uses are unpinned tags:
+- `actions/checkout@v4` (×5)
+
+**.github/workflows/code-review.yml** — all uses are unpinned tags or branch refs:
+- `actions/checkout@v6` (×5)
+- `sulthonzh/code-reviewer@main` (×7, using a mutable branch `main`)
+
+**.github/workflows/release.yml** — all uses are unpinned tags:
+- `actions/checkout@v4` (×2)
+- `docker/setup-qemu-action@v3`
+- `docker/setup-buildx-action@v3`
+- `docker/login-action@v3` (×2)
+- `docker/metadata-action@v5`
+- `docker/build-push-action@v5`
+- `softprops/action-gh-release@v1`
+
+All references must be replaced with full 40-character hex commit SHAs (e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4`).
 
 Locations:
 
-- `.github/workflows/ci.yml:12`
+- `.github/workflows/ci.yml:11`
+- `.github/workflows/ci.yml:19`
+- `.github/workflows/ci.yml:27`
+- `.github/workflows/ci.yml:37`
+- `.github/workflows/ci.yml:46`
 - `.github/workflows/code-review.yml:18`
+- `.github/workflows/code-review.yml:23`
+- `.github/workflows/code-review.yml:33`
+- `.github/workflows/code-review.yml:38`
+- `.github/workflows/code-review.yml:52`
+- `.github/workflows/code-review.yml:57`
+- `.github/workflows/code-review.yml:67`
+- `.github/workflows/code-review.yml:73`
+- `.github/workflows/code-review.yml:80`
+- `.github/workflows/code-review.yml:88`
+- `.github/workflows/code-review.yml:97`
+- `.github/workflows/code-review.yml:103`
 - `.github/workflows/release.yml:14`
+- `.github/workflows/release.yml:17`
+- `.github/workflows/release.yml:20`
+- `.github/workflows/release.yml:23`
+- `.github/workflows/release.yml:28`
+- `.github/workflows/release.yml:33`
+- `.github/workflows/release.yml:40`
+- `.github/workflows/release.yml:55`
+- `.github/workflows/release.yml:72`
+- `.github/workflows/release.yml:96`
 
 ### missing-permissions (severity: medium)
 
-ci.yml has no top-level 'permissions:' key and none of its five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level 'permissions:' block. This means the workflow runs with the default, overly-broad GITHUB_TOKEN permissions.
+`.github/workflows/ci.yml` has no top-level `permissions:` key and none of its five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level `permissions:` block. Without explicit permissions, the workflow inherits the repository's default token permissions, which may be overly broad (write access to contents, packages, etc.). A minimal `permissions: read-all` or specific per-job scopes should be added.
 
 Locations:
 
 - `.github/workflows/ci.yml:1`
 
-### github-env-injection (severity: high)
-
-In the 'Generate changelog' step of release.yml, the variable $CHANGELOG is populated from 'git log' output (commit messages authored by contributors — untrusted, attacker-controlled content) and then written directly to $GITHUB_OUTPUT without the required sanitization step (printf '%s' "$CHANGELOG" | tr -d '\n\r'). A malicious commit message containing newlines could inject arbitrary key=value pairs into GITHUB_OUTPUT, poisoning downstream step outputs. The offending lines are: 'echo "changelog<<EOF" >> $GITHUB_OUTPUT', 'echo "$CHANGELOG" >> $GITHUB_OUTPUT', 'echo "EOF" >> $GITHUB_OUTPUT'.
-
-Locations:
-
-- `.github/workflows/release.yml:56`
-
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** unpinned-uses, missing-permissions, github-env-injection
+**Fixes applied:** unpinned-uses, missing-permissions
 
 **Notes:**
 
-Fixed all three findings across the three workflow files:
+Fixed all unpinned action references across three workflow files by replacing mutable tags/branch refs with full 40-character commit SHAs (resolved via lookup_action_sha). Added a top-level `permissions: contents: read` block to ci.yml which had no permissions defined. Pinned actions: actions/checkout@v4 → SHA 11d5960..., actions/checkout@v6 → SHA d23441a..., sulthonzh/code-reviewer@main → SHA d882af6..., docker/setup-qemu-action@v3 → SHA c7c5346..., docker/setup-buildx-action@v3 → SHA 8d2750c..., docker/login-action@v3 → SHA c94ce9f..., docker/metadata-action@v5 → SHA c299e40..., docker/build-push-action@v5 → SHA ca052bb..., softprops/action-gh-release@v1 → SHA de2c0eb...
 
-1. **unpinned-uses** (ci.yml, code-review.yml, release.yml): Pinned all mutable tag/branch references to full 40-char SHAs with tag comments:
-   - actions/checkout@v4 → @34e114876b0b11c390a56381ad16ebd13914f8d5 (ci.yml ×5, release.yml ×2)
-   - actions/checkout@v6 → @df4cb1c069e1874edd31b4311f1884172cec0e10 (code-review.yml ×6)
-   - sulthonzh/code-reviewer@main → @4546aa400043740f47f0023b54663fdb592b253f (code-review.yml ×8)
-   - docker/setup-qemu-action@v3 → @c7c53464625b32c7a7e944ae62b3e17d2b600130
-   - docker/setup-buildx-action@v3 → @8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-   - docker/login-action@v3 → @c94ce9fb468520275223c153574b00df6fe4bcc9 (×2)
-   - docker/metadata-action@v5 → @c299e40c65443455700f0fdfc63efafe5b349051
-   - docker/build-push-action@v5 → @ca052bb54ab0790a636c9b5f226502c73d547a25
-   - softprops/action-gh-release@v1 → @de2c0eb89ae2a093876385947365aca7b0e5f844
+### Iteration 1
 
-2. **missing-permissions** (ci.yml): Added `permissions: {}` top-level block since none of the five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) require GITHUB_TOKEN access.
-
-3. **github-env-injection** (release.yml): Sanitized the changelog generation step by using `printf '%s' "$VAR" | tr -d '\n\r'` for the tag value and `tr -d '\r'` for the multiline changelog before writing to $GITHUB_OUTPUT, preventing newline injection from attacker-controlled commit messages.
-
-### Iteration 2
-
-**Fixes applied:** hardcoded-credentials
+**Fixes applied:** github-env-injection
 
 **Notes:**
 
-Replaced two hardcoded plaintext passwords in docker-compose.yml:
-- Line 24: POSTGRES_PASSWORD: changeme → POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-- Line 44: DB_PASSWORD: changeme → DB_PASSWORD: ${DB_PASSWORD}
-
-Both values now use Docker Compose environment variable interpolation, requiring the passwords to be supplied via environment variables or a .env file at runtime rather than being embedded in the compose file.
+Fixed the github-env-injection finding in .github/workflows/release.yml at line 77. The TAG variable (derived from GITHUB_REF, which is user-controlled via the pushed tag name) was being written directly to $GITHUB_OUTPUT without sanitization. Fixed by introducing a `safe_tag` variable that strips newline and carriage-return characters using `printf '%s' "$TAG" | tr -d '\n\r'`, then writing `safe_tag` to $GITHUB_OUTPUT instead of the raw TAG value. Also added quoting around $GITHUB_OUTPUT for best practice.
 
