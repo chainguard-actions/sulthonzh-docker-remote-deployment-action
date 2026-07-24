@@ -142,7 +142,8 @@ chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
 #chmod 600 "~/.ssh"
-eval $(ssh-agent)
+SSH_AGENT_OUTPUT=$(ssh-agent)
+eval "$SSH_AGENT_OUTPUT"
 ssh-add ~/.ssh/id_rsa
 
 echo "Add known hosts"
