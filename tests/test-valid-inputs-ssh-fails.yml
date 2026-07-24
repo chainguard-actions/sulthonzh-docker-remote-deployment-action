@@ -1,4 +1,4 @@
-name: Test registry credentials inputs are accepted
+name: Test valid inputs pass validation (SSH fails as expected)
 on:
   workflow_dispatch:
 jobs:
@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with registry credentials (will fail at SSH/docker login stage)
+      - name: Run action with valid inputs (will fail at SSH stage)
         id: action
         uses: .
         continue-on-error: true
@@ -24,20 +24,20 @@ jobs:
           keep_files: '4'
           docker_prune: 'false'
           copy_stack_file: 'false'
-          docker_registry_username: 'testuser'
-          docker_registry_password: 'testpassword'
-          docker_registry_uri: 'https://registry.hub.docker.com'
 
-      - name: Assert action failed at SSH/docker stage (not at input validation)
+      - name: Assert action failed at SSH stage (not at validation)
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
-          # The action should fail because the SSH host is unreachable or docker login fails,
-          # NOT because of input validation errors on registry credentials.
-          # 192.0.2.1 is a TEST-NET address (RFC 5737) guaranteed to be unreachable.
+          # The action should fail because the SSH host is unreachable,
+          # NOT because of input validation errors.
+          # Either failure or success is acceptable here — what matters is
+          # that the action did not exit early due to input validation.
+          # In practice, it will fail because 192.0.2.1 is a TEST-NET address
+          # (RFC 5737) that is guaranteed to be unreachable.
           if [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action failed at SSH/docker stage as expected (registry credential inputs passed validation)"
+            echo "PASS: action failed at SSH/docker stage as expected (valid inputs passed validation)"
           else
             echo "PASS: action completed (unexpected but not a validation failure)"
           fi

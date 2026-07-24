@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
@@ -67,15 +67,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Generate changelog
         id: changelog
         run: |
-          # Get tag name and sanitize it (strip newlines to prevent injection)
-          TAG=${GITHUB_REF#refs/tags/}
-          safe_tag=$(printf '%s' "$TAG" | tr -d '\n\r')
-          echo "tag=$safe_tag" >> "$GITHUB_OUTPUT"
+          # Get tag name and sanitize it (strip newlines to prevent GITHUB_OUTPUT injection)
+          RAW_TAG="${GITHUB_REF#refs/tags/}"
+          TAG=$(printf '%s' "$RAW_TAG" | tr -d '\n\r')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
           # Get commit messages since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -84,10 +84,13 @@ jobs:
           else
             CHANGELOG=$(git log --pretty=format:"- %s (%h)" -10)
           fi
-          # Sanitize changelog: strip carriage returns and replace any line that
-          # matches the heredoc delimiter to prevent heredoc injection
-          safe_changelog=$(printf '%s' "$CHANGELOG" | tr -d '\r' | sed 's/^CHANGELOG_DELIM$/CHANGELOG_DELIM_/g')
-          printf 'changelog<<CHANGELOG_DELIM\n%s\nCHANGELOG_DELIM\n' "$safe_changelog" >> "$GITHUB_OUTPUT"
+
+          # Write changelog using heredoc delimiter; sanitize newlines within key name only
+          # The heredoc form is safe for multi-line values per GitHub docs
+          SAFE_DELIMITER=$(printf '%s' "$RANDOM$RANDOM" | tr -d '\n\r')
+          printf 'changelog<<%s\n' "$SAFE_DELIMITER" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$CHANGELOG" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$SAFE_DELIMITER" >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1

@@ -8,83 +8,75 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
-Action **sulthonzh--docker-remote-deployment-action/v1.4.45** was hardened automatically. 4 finding(s) were identified and resolved across 2 iteration(s).
+Action **sulthonzh--docker-remote-deployment-action/v1.4.45** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-All uses: references in ci.yml are pinned to mutable version tags (@v4) rather than full 40-character SHA digests. Failing references: actions/checkout@v4 (×5 occurrences).
+All three workflow files reference actions using mutable tags or branch names instead of pinned 40-character commit SHAs, making them vulnerable to supply-chain attacks if the referenced tag or branch is moved.
+
+.github/workflows/ci.yml: actions/checkout@v4 (lines 13, 19, 25, 33, 43)
+
+.github/workflows/code-review.yml: actions/checkout@v6 (lines 27, 40, 67, 84, 95), sulthonzh/code-reviewer@main (lines 30, 43, 56, 70, 75, 87, 97)
+
+.github/workflows/release.yml: actions/checkout@v4 (lines 18, 62), docker/setup-qemu-action@v3 (line 21), docker/setup-buildx-action@v3 (line 24), docker/login-action@v3 (lines 27, 33), docker/metadata-action@v5 (line 38), docker/build-push-action@v5 (line 49), softprops/action-gh-release@v1 (line 80)
 
 Locations:
 
 - `.github/workflows/ci.yml:13`
-- `.github/workflows/ci.yml:20`
-- `.github/workflows/ci.yml:27`
-- `.github/workflows/ci.yml:35`
-- `.github/workflows/ci.yml:44`
-
-### unpinned-uses (severity: high)
-
-All uses: references in code-review.yml are pinned to mutable tags or branch names rather than full 40-character SHA digests. Failing references: actions/checkout@v6 (×5), sulthonzh/code-reviewer@main (×7). The @main branch reference is especially dangerous as it tracks a moving branch head.
-
-Locations:
-
-- `.github/workflows/code-review.yml:20`
-- `.github/workflows/code-review.yml:26`
-- `.github/workflows/code-review.yml:38`
-- `.github/workflows/code-review.yml:44`
-- `.github/workflows/code-review.yml:57`
-- `.github/workflows/code-review.yml:69`
-- `.github/workflows/code-review.yml:76`
-- `.github/workflows/code-review.yml:88`
-- `.github/workflows/code-review.yml:97`
-- `.github/workflows/code-review.yml:103`
-- `.github/workflows/code-review.yml:113`
-- `.github/workflows/code-review.yml:120`
-
-### unpinned-uses (severity: high)
-
-All uses: references in release.yml are pinned to mutable version tags rather than full 40-character SHA digests. Failing references: actions/checkout@v4 (×2), docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (×2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1.
-
-Locations:
-
-- `.github/workflows/release.yml:14`
+- `.github/workflows/code-review.yml:27`
+- `.github/workflows/code-review.yml:30`
 - `.github/workflows/release.yml:18`
 - `.github/workflows/release.yml:21`
 - `.github/workflows/release.yml:24`
-- `.github/workflows/release.yml:29`
-- `.github/workflows/release.yml:34`
-- `.github/workflows/release.yml:42`
-- `.github/workflows/release.yml:55`
-- `.github/workflows/release.yml:72`
-- `.github/workflows/release.yml:89`
+- `.github/workflows/release.yml:27`
+- `.github/workflows/release.yml:33`
+- `.github/workflows/release.yml:38`
+- `.github/workflows/release.yml:49`
+- `.github/workflows/release.yml:80`
 
 ### missing-permissions (severity: medium)
 
-ci.yml has no top-level permissions: key and none of its five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level permissions: block. This means the workflow runs with the default (potentially broad) GITHUB_TOKEN permissions.
+ci.yml has no top-level `permissions:` key and none of its five jobs (shell-lint, dockerfile-lint, validate-yaml, security-scan, build-image) define a job-level `permissions:` block. This means the GITHUB_TOKEN is granted its default (broad) permissions for every job in the workflow.
 
 Locations:
 
 - `.github/workflows/ci.yml:1`
 
+### github-env-injection (severity: high)
+
+In release.yml, the 'Generate changelog' step writes two unsanitized values to $GITHUB_OUTPUT without applying the required `printf '%s' ... | tr -d '\n\r'` sanitization:
+
+1. Line 69: `echo "tag=$TAG" >> $GITHUB_OUTPUT` — TAG is derived from `${GITHUB_REF#refs/tags/}`, a GitHub context value. A tag name containing newline characters could inject additional key=value pairs into GITHUB_OUTPUT.
+
+2. Line 78: `echo "$CHANGELOG" >> $GITHUB_OUTPUT` — CHANGELOG is populated from `git log` commit messages, which are attacker-controlled (any contributor can craft a commit message with newlines). Writing this directly to GITHUB_OUTPUT without sanitization allows injection of arbitrary output variables.
+
+Locations:
+
+- `.github/workflows/release.yml:69`
+- `.github/workflows/release.yml:78`
+
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** unpinned-uses, missing-permissions
+**Fixes applied:** unpinned-uses, missing-permissions, github-env-injection
 
 **Notes:**
 
-Fixed all unpinned action references across three workflow files by resolving each tag to its full 40-character SHA digest using lookup_action_sha. Added a top-level `permissions: {}` block to ci.yml to address the missing-permissions finding. Specific changes: (1) ci.yml: pinned 5× actions/checkout@v4 → SHA 34e114876b0b11c390a56381ad16ebd13914f8d5, added `permissions: {}`; (2) code-review.yml: pinned 5× actions/checkout@v6 → SHA df4cb1c069e1874edd31b4311f1884172cec0e10, pinned 7× sulthonzh/code-reviewer@main → SHA d0c6f9c936438fbd487b575f55f739ba52f4cc37; (3) release.yml: pinned actions/checkout@v4 (×2), docker/setup-qemu-action@v3, docker/setup-buildx-action@v3, docker/login-action@v3 (×2), docker/metadata-action@v5, docker/build-push-action@v5, softprops/action-gh-release@v1 to their respective full SHAs.
+Fixed all three findings across the three workflow files:
 
-### Iteration 2
+1. unpinned-uses: Pinned all action references to full 40-char commit SHAs with tag comments:
+   - ci.yml: actions/checkout@v4 → @11d5960a326750d5838078e36cf38b85af677262 (5 occurrences)
+   - code-review.yml: actions/checkout@v6 → @d23441a48e516b6c34aea4fa41551a30e30af803 (5 occurrences), sulthonzh/code-reviewer@main → @d882af6cd1ae55f692c0a8dfc6ff464115ccf89c (7 occurrences)
+   - release.yml: actions/checkout@v4 → @11d5960a326750d5838078e36cf38b85af677262 (2 occurrences), docker/setup-qemu-action@v3 → @c7c53464625b32c7a7e944ae62b3e17d2b600130, docker/setup-buildx-action@v3 → @8d2750c68a42422c14e847fe6c8ac0403b4cbd6f, docker/login-action@v3 → @c94ce9fb468520275223c153574b00df6fe4bcc9 (2 occurrences), docker/metadata-action@v5 → @c299e40c65443455700f0fdfc63efafe5b349051, docker/build-push-action@v5 → @ca052bb54ab0790a636c9b5f226502c73d547a25, softprops/action-gh-release@v1 → @de2c0eb89ae2a093876385947365aca7b0e5f844
 
-**Fixes applied:** github-env-injection
+2. missing-permissions: Added top-level `permissions: contents: read` to ci.yml (the minimum needed for checkout-only jobs).
 
-**Notes:**
-
-Fixed the 'Generate changelog' step in .github/workflows/release.yml: (1) Sanitized the TAG value using `printf '%s' "$TAG" | tr -d '\n\r'` before writing to $GITHUB_OUTPUT to prevent newline injection. (2) Sanitized the CHANGELOG content by stripping carriage returns with `tr -d '\r'` and escaping any line that exactly matches the heredoc delimiter `CHANGELOG_DELIM` (replacing it with `CHANGELOG_DELIM_`) to prevent heredoc delimiter injection. (3) Used a unique named delimiter `CHANGELOG_DELIM` instead of the generic `EOF`. (4) Used `printf` for writing the multiline output to $GITHUB_OUTPUT. (5) Properly quoted `"$GITHUB_OUTPUT"` throughout.
+3. github-env-injection: Fixed the 'Generate changelog' step in release.yml:
+   - TAG is now sanitized with `printf '%s' "$RAW_TAG" | tr -d '\n\r'` before writing to GITHUB_OUTPUT
+   - CHANGELOG is now written using a randomized heredoc delimiter (the safe multi-line format per GitHub docs), replacing the unsafe direct `echo "$CHANGELOG" >> $GITHUB_OUTPUT` pattern
 
