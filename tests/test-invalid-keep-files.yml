@@ -1,4 +1,4 @@
-name: Test dangerous characters in args validation
+name: Test invalid keep_files validation
 on:
   workflow_dispatch:
 jobs:
@@ -16,14 +16,15 @@ jobs:
             -----BEGIN OPENSSH PRIVATE KEY-----
             dGVzdA==
             -----END OPENSSH PRIVATE KEY-----
-          args: "up -d; rm -rf /"
-      - name: Assert action failed due to dangerous characters in args
+          args: "up -d"
+          keep_files: "not-a-number"
+      - name: Assert action failed due to non-numeric keep_files
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with dangerous args, but outcome was: $OUTCOME"
+            echo "FAIL: expected action to fail with invalid keep_files, but outcome was: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected dangerous characters in args"
+          echo "PASS: action correctly rejected non-numeric keep_files"

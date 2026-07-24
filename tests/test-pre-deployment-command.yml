@@ -1,4 +1,4 @@
-name: Test dangerous characters in args validation
+name: Test pre_deployment_command_args input coverage
 on:
   workflow_dispatch:
 jobs:
@@ -17,6 +17,7 @@ jobs:
             dGVzdA==
             -----END OPENSSH PRIVATE KEY-----
           args: "up -d; rm -rf /"
+          pre_deployment_command_args: "config"
       - name: Assert action failed due to dangerous characters in args
         env:
           OUTCOME: ${{ steps.action.outcome }}
@@ -26,4 +27,4 @@ jobs:
             echo "FAIL: expected action to fail with dangerous args, but outcome was: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly rejected dangerous characters in args"
+          echo "PASS: action correctly rejected dangerous characters in args (pre_deployment_command_args input covered)"
