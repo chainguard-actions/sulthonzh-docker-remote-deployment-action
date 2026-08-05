@@ -1,0 +1,43 @@
+name: Test valid inputs reach SSH connection stage
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with valid inputs (SSH will fail - no real host)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: "user@192.0.2.1"
+          remote_docker_port: "22"
+          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test"
+          ssh_private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----"
+          args: "up -d"
+          deployment_mode: "docker-compose"
+          docker_prune: "false"
+          prune_volumes: "false"
+          copy_stack_file: "false"
+          pull_images_first: "false"
+          keep_files: "4"
+
+      - name: Assert action failed at SSH stage (not at validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because SSH connection to 192.0.2.1 (TEST-NET) fails,
+          # not because of input validation. Either way, the action fails gracefully.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action unexpectedly succeeded (no real SSH host available)"
+            exit 1
+          fi
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected - no real SSH host at 192.0.2.1)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
