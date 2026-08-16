@@ -56,6 +56,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v1.4.68 | [`v1.4.68`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.68) | [`bc5d057`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/bc5d057e4f054fab05150d020c69cfa8fd67273d) |
 | v1.4.69 | [`v1.4.69`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.69) | [`ec22fe9`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/ec22fe9c6df1f0e96543bf148567e89e8fd59a29) |
 | v1.4.7 | [`v1.4.7`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.7) | [`c509ce5`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/c509ce5dd9a91f9106d7e13aae156124c4cae792) |
+| v1.4.70 | [`v1.4.70`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.70) | [`79940fd`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/79940fd239b86819b10b25f3a8c08d273cd694e5) |
 | v1.4.8 | [`v1.4.8`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.8) | [`0004a3d`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/0004a3d9ec45b82a5924ed2b9e80b9ad00c14ee3) |
 | v1.4.9 | [`v1.4.9`](https://github.com/chainguard-actions/sulthonzh-docker-remote-deployment-action/tree/v1.4.9) | [`9721b46`](https://github.com/sulthonzh/docker-remote-deployment-action/commit/9721b467b01a4f4f4eae3cf404ea853f4c8714b8) |
 
