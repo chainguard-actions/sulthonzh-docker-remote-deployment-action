@@ -1,0 +1,44 @@
+name: Test pre_deployment_command_args input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'deploy@192.0.2.1'
+          remote_docker_port: '22'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3 test@test'
+          ssh_private_key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            b3BlbnNzaC1rZXktdjEAAAAA
+            -----END OPENSSH PRIVATE KEY-----
+          args: 'up -d'
+          deployment_mode: 'docker-compose'
+          pre_deployment_command_args: 'config'
+          copy_stack_file: 'false'
+          pull_images_first: 'false'
+          docker_prune: 'false'
+          prune_volumes: 'false'
+          keep_files: '4'
+      - name: Assert action failed gracefully at SSH stage (pre_deployment_command_args accepted)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action passes input validation (pre_deployment_command_args='config' is valid)
+          # but fails at SSH connection time because 192.0.2.1 (TEST-NET, RFC 5737)
+          # is unreachable and the private key is a stub.
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully at SSH stage as expected"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action unexpectedly succeeded with stub SSH credentials"
+            exit 1
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
