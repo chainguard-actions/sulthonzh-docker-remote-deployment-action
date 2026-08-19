@@ -1,6 +1,7 @@
-name: Test non-numeric remote_docker_port rejection
+name: Test non-numeric remote_docker_port
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,11 +15,11 @@ jobs:
         with:
           remote_docker_host: 'user@example.com'
           remote_docker_port: 'abc'
-          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
-            -----BEGIN OPENSSH PRIVATE KEY-----
-            dGVzdA==
-            -----END OPENSSH PRIVATE KEY-----
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhSaFMOqKCBFBhL
+            -----END RSA PRIVATE KEY-----
           args: 'up -d'
           deployment_mode: 'docker-compose'
 
@@ -28,7 +29,7 @@ jobs:
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with non-numeric port 'abc', but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail with non-numeric port 'abc', but outcome was '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: action correctly rejected non-numeric port value"
+          echo "PASS: action correctly failed with non-numeric port"

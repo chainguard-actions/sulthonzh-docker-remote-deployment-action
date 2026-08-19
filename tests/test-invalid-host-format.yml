@@ -1,6 +1,7 @@
 name: Test invalid remote_docker_host format
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -13,11 +14,11 @@ jobs:
         continue-on-error: true
         with:
           remote_docker_host: 'invalidhost'
-          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test'
+          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
-            -----BEGIN OPENSSH PRIVATE KEY-----
-            dGVzdA==
-            -----END OPENSSH PRIVATE KEY-----
+            -----BEGIN RSA PRIVATE KEY-----
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMFhSaFMOqKCBFBhL
+            -----END RSA PRIVATE KEY-----
           args: 'up -d'
           deployment_mode: 'docker-compose'
 
@@ -27,7 +28,7 @@ jobs:
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with invalid host format, but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail with invalid host format, but outcome was '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: action correctly rejected invalid host format"
+          echo "PASS: action correctly failed with invalid host format"
