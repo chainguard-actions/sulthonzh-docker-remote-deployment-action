@@ -157,30 +157,26 @@ if [ -z "${INPUT_COPY_STACK_FILE+x}" ]; then
 fi
 
 STACK_FILE=${INPUT_STACK_FILE_NAME}
+DEPLOYMENT_COMMAND_OPTIONS=""
 
-# Build deployment command array based on mode
-# Using arrays avoids eval and prevents shell injection from user-controlled inputs
+# Build deployment command based on mode
+# Note: STACK_FILE is quoted with escaped quotes (\") because it's interpolated into the final command string
+# This ensures filenames with spaces don't break the command
 
 if [ "$INPUT_COPY_STACK_FILE" == "true" ]; then
   STACK_FILE="$INPUT_DEPLOY_PATH/$STACK_FILE"
+else
+  DEPLOYMENT_COMMAND_OPTIONS=" --log-level debug --host ssh://$INPUT_REMOTE_DOCKER_HOST:$INPUT_REMOTE_DOCKER_PORT"
 fi
 
 case "$INPUT_DEPLOYMENT_MODE" in
 
   docker-swarm)
-    if [ "$INPUT_COPY_STACK_FILE" == "true" ]; then
-      DEPLOYMENT_CMD_ARRAY=(docker stack deploy --compose-file "$STACK_FILE")
-    else
-      DEPLOYMENT_CMD_ARRAY=(docker --log-level debug --host "ssh://$INPUT_REMOTE_DOCKER_HOST:$INPUT_REMOTE_DOCKER_PORT" stack deploy --compose-file "$STACK_FILE")
-    fi
+    DEPLOYMENT_COMMAND="docker $DEPLOYMENT_COMMAND_OPTIONS stack deploy --compose-file \"$STACK_FILE\""
   ;;
 
   docker-compose)
-    if [ "$INPUT_COPY_STACK_FILE" == "true" ]; then
-      DEPLOYMENT_CMD_ARRAY=(docker-compose -f "$STACK_FILE")
-    else
-      DEPLOYMENT_CMD_ARRAY=(docker-compose -f "$STACK_FILE" --log-level debug --host "ssh://$INPUT_REMOTE_DOCKER_HOST:$INPUT_REMOTE_DOCKER_PORT")
-    fi
+    DEPLOYMENT_COMMAND="docker-compose -f \"$STACK_FILE\" $DEPLOYMENT_COMMAND_OPTIONS"
   ;;
 
   *)
@@ -253,10 +249,6 @@ if ! [ -z "${INPUT_DOCKER_PRUNE+x}" ] && [ "$INPUT_DOCKER_PRUNE" = 'true' ] ; th
   fi
 fi
 
-# Split INPUT_ARGS into an array safely (word-split on whitespace, no glob expansion)
-# This avoids eval while still allowing multiple arguments to be passed
-IFS=' ' read -r -a INPUT_ARGS_ARRAY <<< "$INPUT_ARGS"
-
 # Handle stack file copying and deployment
 if ! [ -z "${INPUT_COPY_STACK_FILE+x}" ] && [ $INPUT_COPY_STACK_FILE = 'true' ] ; then
   execute_ssh "mkdir -p \"$INPUT_DEPLOY_PATH\"/stacks || true"
@@ -274,18 +266,19 @@ if ! [ -z "${INPUT_COPY_STACK_FILE+x}" ] && [ $INPUT_COPY_STACK_FILE = 'true' ] 
   # Handle pre-deployment commands
   if [ -n "${INPUT_PULL_IMAGES_FIRST+x}" ] && [ "$INPUT_PULL_IMAGES_FIRST" = 'true' ] && [ "$INPUT_DEPLOYMENT_MODE" = 'docker-compose' ] ; then
     echo "Pulling images first..."
-    execute_ssh "${DEPLOYMENT_CMD_ARRAY[@]}" pull
+    execute_ssh "${DEPLOYMENT_COMMAND} pull"
   fi
 
   if [ -n "${INPUT_PRE_DEPLOYMENT_COMMAND_ARGS+x}" ] && [ "$INPUT_DEPLOYMENT_MODE" = 'docker-compose' ] ; then
     echo "Running pre-deployment command: $INPUT_PRE_DEPLOYMENT_COMMAND_ARGS"
-    execute_ssh "${DEPLOYMENT_CMD_ARRAY[@]}" "$INPUT_PRE_DEPLOYMENT_COMMAND_ARGS" 2>&1
+    execute_ssh "${DEPLOYMENT_COMMAND}" "$INPUT_PRE_DEPLOYMENT_COMMAND_ARGS" 2>&1
   fi
 
   echo "Running deployment command: $INPUT_ARGS"
-  execute_ssh "${DEPLOYMENT_CMD_ARRAY[@]}" "${INPUT_ARGS_ARRAY[@]}" 2>&1
+  execute_ssh "${DEPLOYMENT_COMMAND}" "$INPUT_ARGS" 2>&1
 else
-  echo "Connecting to $INPUT_REMOTE_DOCKER_HOST... Command: ${DEPLOYMENT_CMD_ARRAY[*]} $INPUT_ARGS"
-  # Execute using arrays to avoid eval and prevent shell injection
-  "${DEPLOYMENT_CMD_ARRAY[@]}" "${INPUT_ARGS_ARRAY[@]}" 2>&1
+  echo "Connecting to $INPUT_REMOTE_DOCKER_HOST... Command: ${DEPLOYMENT_COMMAND} ${INPUT_ARGS}"
+  # Use eval to safely execute the command string, preserving spacing and special characters in arguments
+  # Variables are validated earlier to prevent command injection
+  eval "${DEPLOYMENT_COMMAND} ${INPUT_ARGS}" 2>&1
 fi
