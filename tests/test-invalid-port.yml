@@ -1,33 +1,55 @@
 name: Test invalid remote_docker_port
 on:
   workflow_dispatch:
+
 jobs:
-  test:
+  test-invalid-port:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with out-of-range port
-        id: action
-        uses: .
+      - name: Run action with out-of-range port (99999)
+        id: action_high_port
         continue-on-error: true
+        uses: .
         with:
-          remote_docker_host: 'user@example.com'
-          remote_docker_port: '99999'
-          ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@test'
-          ssh_private_key: |
-            -----BEGIN OPENSSH PRIVATE KEY-----
-            dGVzdA==
-            -----END OPENSSH PRIVATE KEY-----
-          args: 'up -d'
+          remote_docker_host: "user@example.com"
+          remote_docker_port: "99999"
+          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test"
+          ssh_private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----"
+          args: "up -d"
+          deployment_mode: "docker-compose"
 
-      - name: Assert action failed due to invalid port
+      - name: Assert action failed with out-of-range port
         env:
-          OUTCOME: ${{ steps.action.outcome }}
+          OUTCOME: ${{ steps.action_high_port.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with out-of-range port, but got outcome=$OUTCOME"
+            echo "FAIL: expected action to fail with port 99999, but got outcome: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with invalid port number"
+          echo "PASS: action correctly failed for out-of-range port"
+
+      - name: Run action with non-numeric port
+        id: action_bad_port
+        continue-on-error: true
+        uses: .
+        with:
+          remote_docker_host: "user@example.com"
+          remote_docker_port: "not-a-port"
+          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test"
+          ssh_private_key: "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----"
+          args: "up -d"
+          deployment_mode: "docker-compose"
+
+      - name: Assert action failed with non-numeric port
+        env:
+          OUTCOME: ${{ steps.action_bad_port.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with non-numeric port, but got outcome: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed for non-numeric port"
