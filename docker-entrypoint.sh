@@ -191,13 +191,12 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-_agent_sock_dir="$(mktemp -d)"
-SSH_AUTH_SOCK="${_agent_sock_dir}/agent.sock"
-export SSH_AUTH_SOCK
-ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
-SSH_AGENT_PID="$(pgrep -n -u "$(id -u)" ssh-agent 2>/dev/null || true)"
-export SSH_AGENT_PID
-unset _agent_sock_dir
+SSH_AGENT_SOCK="$(mktemp -u /tmp/ssh-agent.XXXXXX)"
+ssh-agent -a "$SSH_AGENT_SOCK" > /tmp/ssh-agent-env.sh
+SSH_AUTH_SOCK="$SSH_AGENT_SOCK"
+SSH_AGENT_PID="$(grep -oP '(?<=SSH_AGENT_PID=)\d+' /tmp/ssh-agent-env.sh)"
+export SSH_AUTH_SOCK SSH_AGENT_PID
+rm -f /tmp/ssh-agent-env.sh
 ssh-add ~/.ssh/id_rsa
 
 echo "Add known hosts"
