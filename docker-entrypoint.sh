@@ -191,7 +191,9 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-eval $(ssh-agent)
+SSH_AGENT_SOCK="$(mktemp -u /tmp/ssh-agent-XXXXXX.sock)"
+ssh-agent -a "$SSH_AGENT_SOCK" > /dev/null
+export SSH_AUTH_SOCK="$SSH_AGENT_SOCK"
 ssh-add ~/.ssh/id_rsa
 
 echo "Add known hosts"
