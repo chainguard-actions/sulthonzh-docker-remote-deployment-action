@@ -225,7 +225,10 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-eval $(ssh-agent)
+SSH_AGENT_OUTPUT=$(ssh-agent -s)
+SSH_AUTH_SOCK=$(printf '%s' "$SSH_AGENT_OUTPUT" | grep -oP '(?<=SSH_AUTH_SOCK=)[^;]+')
+SSH_AGENT_PID=$(printf '%s' "$SSH_AGENT_OUTPUT" | grep -oP '(?<=SSH_AGENT_PID=)[^;]+')
+export SSH_AUTH_SOCK SSH_AGENT_PID
 ssh-add ~/.ssh/id_rsa
 
 echo "Add known hosts"
