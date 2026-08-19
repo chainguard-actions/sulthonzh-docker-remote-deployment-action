@@ -1,4 +1,4 @@
-name: Test invalid remote_docker_host format
+name: Test invalid host format validation
 on:
   workflow_dispatch:
 jobs:
@@ -6,6 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Run action with invalid host format (no user@)
         id: action
         uses: .
@@ -15,11 +16,12 @@ jobs:
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMCKBSMDGMdBCBFJO
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCHFMFBMFMFMFMFMFM
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
           deployment_mode: 'docker-compose'
-      - name: Assert action failed due to invalid host format
+
+      - name: Assert action failed with invalid host format
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -28,4 +30,4 @@ jobs:
             echo "FAIL: expected action to fail with invalid host format, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed for invalid host format"
+          echo "PASS: action correctly failed with invalid host format"

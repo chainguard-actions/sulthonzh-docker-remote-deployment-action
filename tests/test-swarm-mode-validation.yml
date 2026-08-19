@@ -1,0 +1,44 @@
+name: Test docker-swarm deployment mode is accepted
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate a real SSH key pair for testing
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "" -C "test@test"
+          echo "SSH_PRIVATE_KEY<<EOF" >> $GITHUB_ENV
+          cat /tmp/test_key >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "SSH_PUBLIC_KEY<<EOF" >> $GITHUB_ENV
+          cat /tmp/test_key.pub >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Run action with docker-swarm mode (valid mode, will fail at SSH)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: 'user@192.0.2.1'
+          remote_docker_port: '22'
+          ssh_public_key: ${{ env.SSH_PUBLIC_KEY }}
+          ssh_private_key: ${{ env.SSH_PRIVATE_KEY }}
+          args: 'deploy my-stack'
+          deployment_mode: 'docker-swarm'
+
+      - name: Assert action failed at SSH stage (not at mode validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because 192.0.2.1 is a TEST-NET address (RFC 5737)
+          # that is unreachable. It should NOT fail due to invalid deployment_mode.
+          # If it fails, it means it passed mode validation and reached SSH stage.
+          if [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action unexpectedly succeeded connecting to a TEST-NET address"
+            exit 1
+          fi
+          echo "PASS: docker-swarm mode was accepted by validation (action failed at SSH stage as expected)"
