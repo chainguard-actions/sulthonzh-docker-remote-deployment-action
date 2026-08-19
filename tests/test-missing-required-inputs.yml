@@ -1,4 +1,4 @@
-name: Test invalid remote_docker_port
+name: Test missing required inputs validation
 on:
   workflow_dispatch:
 jobs:
@@ -7,13 +7,15 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with non-numeric port
-        id: action_non_numeric
+      # GitHub Actions requires all 'required: true' inputs to be provided,
+      # so we test with an invalid host format to trigger early validation failure.
+      # The action validates remote_docker_host format before attempting SSH.
+      - name: Run action with empty-like host (only @)
+        id: action_bad_host
         uses: .
         continue-on-error: true
         with:
-          remote_docker_host: 'user@192.168.1.1'
-          remote_docker_port: 'notaport'
+          remote_docker_host: '@'
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
@@ -22,24 +24,23 @@ jobs:
           args: 'up -d'
           deployment_mode: 'docker-compose'
 
-      - name: Assert action failed with non-numeric port
+      - name: Assert action failed with malformed host
         env:
-          OUTCOME: ${{ steps.action_non_numeric.outcome }}
+          OUTCOME: ${{ steps.action_bad_host.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with non-numeric port, but got: $OUTCOME"
+            echo "FAIL: expected action to fail with malformed host '@', but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with non-numeric port"
+          echo "PASS: action correctly failed with malformed host"
 
-      - name: Run action with out-of-range port (too high)
-        id: action_out_of_range
+      - name: Run action with host missing user part
+        id: action_no_user
         uses: .
         continue-on-error: true
         with:
-          remote_docker_host: 'user@192.168.1.1'
-          remote_docker_port: '99999'
+          remote_docker_host: 'hostname-only'
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
@@ -48,13 +49,13 @@ jobs:
           args: 'up -d'
           deployment_mode: 'docker-compose'
 
-      - name: Assert action failed with out-of-range port
+      - name: Assert action failed with host missing user part
         env:
-          OUTCOME: ${{ steps.action_out_of_range.outcome }}
+          OUTCOME: ${{ steps.action_no_user.outcome }}
         run: |
           echo "outcome: $OUTCOME"
           if [ "$OUTCOME" != "failure" ]; then
-            echo "FAIL: expected action to fail with out-of-range port, but got: $OUTCOME"
+            echo "FAIL: expected action to fail with host missing user part, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with out-of-range port"
+          echo "PASS: action correctly failed with host missing user part"

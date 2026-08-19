@@ -50,7 +50,7 @@ services:
       DB_HOST: db
       DB_NAME: myapp
       DB_USER: myuser
-      DB_PASSWORD: mypassword
+      DB_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./src:/app/src:ro
     networks:

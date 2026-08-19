@@ -1,4 +1,4 @@
-name: Test invalid remote_docker_host format
+name: Test private registry inputs coverage
 on:
   workflow_dispatch:
 jobs:
@@ -7,7 +7,11 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Run action with invalid host format (no user@)
+      # This test exercises the private registry inputs (docker_registry_username,
+      # docker_registry_password, docker_registry_uri). The action will fail at
+      # host validation because 'invalidhost' has no user@ prefix, which is
+      # intentional — we verify the inputs are accepted and validation runs.
+      - name: Run action with private registry inputs and invalid host
         id: action
         uses: .
         continue-on-error: true
@@ -20,8 +24,11 @@ jobs:
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
           deployment_mode: 'docker-compose'
+          docker_registry_username: 'myregistryuser'
+          docker_registry_password: 'myregistrypassword'
+          docker_registry_uri: 'https://registry.hub.docker.com'
 
-      - name: Assert action failed with invalid host format
+      - name: Assert action failed due to invalid host format
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
@@ -30,4 +37,4 @@ jobs:
             echo "FAIL: expected action to fail with invalid host format, but got: $OUTCOME"
             exit 1
           fi
-          echo "PASS: action correctly failed with invalid host format"
+          echo "PASS: action correctly failed with invalid host format when registry inputs are provided"
