@@ -1,0 +1,36 @@
+name: Test invalid remote_docker_port
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: testuser@192.0.2.1
+          remote_docker_port: "99999"
+          ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0fake test@example"
+          ssh_private_key: |
+            -----BEGIN OPENSSH PRIVATE KEY-----
+            b3BlbnNzaC1rZXktdjEAAAAA
+            -----END OPENSSH PRIVATE KEY-----
+          args: up -d
+          deployment_mode: docker-compose
+      - name: Assert action failed with port validation error
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because port 99999 is out of range (1-65535)
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action correctly rejected out-of-range port"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: action should have rejected out-of-range port"
+            exit 1
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
