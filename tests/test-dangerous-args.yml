@@ -1,0 +1,30 @@
+name: Test dangerous characters in args are rejected
+on:
+  workflow_dispatch:
+jobs:
+  test-dangerous-args:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # The entrypoint validates args for shell metacharacters (;, &, |, `, $, (, ), ", ')
+      # to prevent command injection. Passing args with a semicolon should fail.
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          remote_docker_host: "user@localhost"
+          ssh_public_key: "fake-pub-key"
+          ssh_private_key: "fake-priv-key"
+          args: "up -d; rm -rf /"
+
+      - name: Assert action failed due to dangerous characters in args
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail when args contains shell metacharacters"
+            exit 1
+          fi
+          echo "PASS: action correctly rejected dangerous characters in args"
