@@ -209,12 +209,12 @@ printf '%s\n' "$INPUT_SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa
 printf '%s\n' "$INPUT_SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
 chmod 600 ~/.ssh/id_rsa.pub
-# Start ssh-agent without eval: parse its output to extract socket and PID
-_agent_out="$(ssh-agent -s)"
-SSH_AUTH_SOCK="$(printf '%s\n' "$_agent_out" | grep -oP '(?<=SSH_AUTH_SOCK=)[^;]+')"
-SSH_AGENT_PID="$(printf '%s\n' "$_agent_out" | grep -oP '(?<=SSH_AGENT_PID=)[^;]+')"
+# Start ssh-agent safely without eval: parse only the known variables it exports
+_agent_output=$(ssh-agent -s)
+SSH_AUTH_SOCK=$(printf '%s\n' "$_agent_output" | grep -oP '(?<=SSH_AUTH_SOCK=)[^;]+')
+SSH_AGENT_PID=$(printf '%s\n' "$_agent_output" | grep -oP '(?<=SSH_AGENT_PID=)[^;]+')
 export SSH_AUTH_SOCK SSH_AGENT_PID
-unset _agent_out
+unset _agent_output
 ssh-add ~/.ssh/id_rsa
 
 echo "Add known hosts"

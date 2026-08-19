@@ -1,4 +1,4 @@
-name: Test invalid remote_docker_port
+name: Test path traversal prevention in deploy_path
 on:
   workflow_dispatch:
 jobs:
@@ -18,44 +18,44 @@ jobs:
           cat /tmp/test_key.pub >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Run action with out-of-range port (99999)
-        id: action_high_port
+      - name: Run action with path traversal in deploy_path
+        id: action_traversal
         continue-on-error: true
         uses: .
         with:
           remote_docker_host: 'user@somehost'
-          remote_docker_port: '99999'
           ssh_public_key: ${{ steps.keygen.outputs.public_key }}
           ssh_private_key: ${{ steps.keygen.outputs.private_key }}
           args: 'up -d'
           deployment_mode: 'docker-compose'
+          deploy_path: '../../etc/passwd'
 
-      - name: Assert action failed with out-of-range port
+      - name: Assert action failed with path traversal
         run: |
-          echo "outcome: ${{ steps.action_high_port.outcome }}"
-          if [ "${{ steps.action_high_port.outcome }}" != "failure" ]; then
-            echo "FAIL: expected action to fail with port 99999, but it succeeded"
+          echo "outcome: ${{ steps.action_traversal.outcome }}"
+          if [ "${{ steps.action_traversal.outcome }}" != "failure" ]; then
+            echo "FAIL: expected action to fail with path traversal in deploy_path, but it succeeded"
             exit 1
           fi
-          echo "PASS: action correctly failed with out-of-range port"
+          echo "PASS: action correctly rejected path traversal in deploy_path"
 
-      - name: Run action with non-numeric port
-        id: action_bad_port
+      - name: Run action with absolute path in deploy_path
+        id: action_absolute
         continue-on-error: true
         uses: .
         with:
           remote_docker_host: 'user@somehost'
-          remote_docker_port: 'notaport'
           ssh_public_key: ${{ steps.keygen.outputs.public_key }}
           ssh_private_key: ${{ steps.keygen.outputs.private_key }}
           args: 'up -d'
           deployment_mode: 'docker-compose'
+          deploy_path: '/etc/malicious'
 
-      - name: Assert action failed with non-numeric port
+      - name: Assert action failed with absolute path
         run: |
-          echo "outcome: ${{ steps.action_bad_port.outcome }}"
-          if [ "${{ steps.action_bad_port.outcome }}" != "failure" ]; then
-            echo "FAIL: expected action to fail with non-numeric port, but it succeeded"
+          echo "outcome: ${{ steps.action_absolute.outcome }}"
+          if [ "${{ steps.action_absolute.outcome }}" != "failure" ]; then
+            echo "FAIL: expected action to fail with absolute path in deploy_path, but it succeeded"
             exit 1
           fi
-          echo "PASS: action correctly failed with non-numeric port"
+          echo "PASS: action correctly rejected absolute path in deploy_path"
