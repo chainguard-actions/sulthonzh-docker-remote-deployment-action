@@ -1,6 +1,7 @@
-name: Test invalid remote_docker_host format
+name: Test invalid host format validation
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -12,11 +13,11 @@ jobs:
         uses: .
         continue-on-error: true
         with:
-          remote_docker_host: 'invalidhostnoatsign'
+          remote_docker_host: 'invalidhost'
           ssh_public_key: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC test@test'
           ssh_private_key: |
             -----BEGIN RSA PRIVATE KEY-----
-            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCMCBBBBBBBBBBBBBB
+            MIIEowIBAAKCAQEA0Z3VS5JJcds3xHn/ygWep4PAtEsHAcGCFMHFMBBFMHFMBBFM
             -----END RSA PRIVATE KEY-----
           args: 'up -d'
           deployment_mode: 'docker-compose'
